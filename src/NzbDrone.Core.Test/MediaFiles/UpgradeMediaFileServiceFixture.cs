@@ -9,6 +9,7 @@ using NzbDrone.Core.Books;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Qualities;
 using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Test.Common;
@@ -120,6 +121,70 @@ namespace NzbDrone.Core.Test.MediaFiles
             GivenSingleTrackWithSingleTrackFile();
 
             Subject.UpgradeBookFile(_trackFile, _localTrack).OldFiles.Count.Should().Be(1);
+        }
+
+        [Test]
+        public void should_not_recycle_audiobook_when_importing_ebook()
+        {
+            _trackFile.Quality = new QualityModel(Quality.EPUB);
+
+            _localTrack.Book = Builder<Book>.CreateNew()
+                .With(e => e.BookFiles = new LazyLoaded<List<BookFile>>(
+                    new List<BookFile>
+                    {
+                        new BookFile
+                        {
+                            Id = 1,
+                            Path = Path.Combine(_rootPath, "book.epub"),
+                            Quality = new QualityModel(Quality.EPUB)
+                        },
+                        new BookFile
+                        {
+                            Id = 2,
+                            Path = Path.Combine(_rootPath, "book.m4b"),
+                            Quality = new QualityModel(Quality.M4B)
+                        }
+                    }))
+                .Build();
+
+            Subject.UpgradeBookFile(_trackFile, _localTrack);
+
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(Path.Combine(_rootPath, "book.epub"), It.IsAny<string>()), Times.Once());
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(Path.Combine(_rootPath, "book.m4b"), It.IsAny<string>()), Times.Never());
+            Mocker.GetMock<IMediaFileService>().Verify(v => v.Delete(It.Is<BookFile>(f => f.Id == 2), It.IsAny<DeleteMediaFileReason>()), Times.Never());
+        }
+
+        [Test]
+        public void should_not_recycle_different_audiobook_part()
+        {
+            _trackFile.Quality = new QualityModel(Quality.M4B);
+            _trackFile.Part = 2;
+
+            _localTrack.Book = Builder<Book>.CreateNew()
+                .With(e => e.BookFiles = new LazyLoaded<List<BookFile>>(
+                    new List<BookFile>
+                    {
+                        new BookFile
+                        {
+                            Id = 1,
+                            Path = Path.Combine(_rootPath, "book.part1.m4b"),
+                            Quality = new QualityModel(Quality.M4B),
+                            Part = 1
+                        },
+                        new BookFile
+                        {
+                            Id = 2,
+                            Path = Path.Combine(_rootPath, "book.part2.m4b"),
+                            Quality = new QualityModel(Quality.M4B),
+                            Part = 2
+                        }
+                    }))
+                .Build();
+
+            Subject.UpgradeBookFile(_trackFile, _localTrack);
+
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(Path.Combine(_rootPath, "book.part2.m4b"), It.IsAny<string>()), Times.Once());
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(Path.Combine(_rootPath, "book.part1.m4b"), It.IsAny<string>()), Times.Never());
         }
 
         [Test]

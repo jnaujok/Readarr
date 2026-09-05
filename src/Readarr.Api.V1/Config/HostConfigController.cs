@@ -5,6 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Common.Network;
 using NzbDrone.Core.Authentication;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Update;
@@ -66,6 +67,10 @@ namespace Readarr.Api.V1.Config
             SharedValidator.RuleFor(c => c.BackupFolder).IsValidPath().When(c => Path.IsPathRooted(c.BackupFolder));
             SharedValidator.RuleFor(c => c.BackupInterval).InclusiveBetween(1, 7);
             SharedValidator.RuleFor(c => c.BackupRetention).InclusiveBetween(1, 90);
+
+            SharedValidator.RuleFor(c => c.TrustedNetworks)
+                           .Must(IPNetworkParser.IsValidList)
+                           .WithMessage("Must be a comma-separated list of IP addresses or CIDR networks (for example 10.0.0.0/8, 192.168.1.1)");
         }
 
         private bool IsValidSslCertificate(HostConfigResource resource)

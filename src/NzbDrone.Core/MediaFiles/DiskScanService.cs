@@ -128,9 +128,9 @@ namespace NzbDrone.Core.MediaFiles
 
                 if (!folderExists)
                 {
-                    _logger.Debug("Specified scan folder ({0}) doesn't exist.", folder);
-
-                    CleanMediaFiles(folder, new List<string>());
+                    _logger.Warn("Specified scan folder ({0}) doesn't exist. Skipping media-file cleanup so unmounted libraries are not removed from the database.", folder);
+                    var skippedAuthors = _authorService.GetAuthors(authorIds);
+                    skippedAuthors.ForEach(x => _eventAggregator.PublishEvent(new AuthorScanSkippedEvent(x, AuthorScanSkippedReason.FolderDoesNotExist)));
                     continue;
                 }
 

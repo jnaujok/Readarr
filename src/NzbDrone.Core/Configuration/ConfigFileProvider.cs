@@ -9,6 +9,7 @@ using NzbDrone.Common.Cache;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Common.Network;
 using NzbDrone.Common.Options;
 using NzbDrone.Core.Authentication;
 using NzbDrone.Core.Configuration.Events;
@@ -62,6 +63,7 @@ namespace NzbDrone.Core.Configuration
         string PostgresLogDb { get; }
         string PostgresCacheDb { get; }
         bool TrustCgnatIpAddresses { get; }
+        string TrustedNetworks { get; }
     }
 
     public class ConfigFileProvider : IConfigFileProvider
@@ -479,5 +481,8 @@ namespace NzbDrone.Core.Configuration
         }
 
         public bool TrustCgnatIpAddresses => _authOptions.TrustCgnatIpAddresses ?? GetValueBoolean("TrustCgnatIpAddresses", false, persist: false);
+
+        public string TrustedNetworks =>
+            IPNetworkParser.NormalizeList(_serverOptions.TrustedNetworks ?? GetValue("TrustedNetworks", string.Empty, persist: false));
     }
 }

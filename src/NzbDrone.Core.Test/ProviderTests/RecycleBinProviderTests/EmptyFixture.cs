@@ -1,8 +1,11 @@
+using System.Collections.Generic;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.MediaFiles;
+using NzbDrone.Core.MediaFiles.BookImport;
+using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.Test.Framework;
 
 namespace NzbDrone.Core.Test.ProviderTests.RecycleBinProviderTests
@@ -49,6 +52,33 @@ namespace NzbDrone.Core.Test.ProviderTests.RecycleBinProviderTests
             Mocker.Resolve<RecycleBinProvider>().Empty();
 
             Mocker.GetMock<IDiskProvider>().Verify(v => v.DeleteFile(It.IsAny<string>()), Times.Exactly(2));
+        }
+
+        [Test]
+        public void should_refuse_to_empty_filesystem_root()
+        {
+            var root = System.IO.Path.GetPathRoot(System.IO.Path.GetTempPath());
+            Mocker.GetMock<IConfigService>().SetupGet(s => s.RecycleBin).Returns(root);
+
+            Assert.Throws<RecycleBinException>(() => Mocker.Resolve<RecycleBinProvider>().Empty());
+
+            Mocker.GetMock<IDiskProvider>().Verify(v => v.DeleteFolder(It.IsAny<string>(), true), Times.Never());
+        }
+
+        [Test]
+        public void should_refuse_to_empty_recycle_bin_that_overlaps_a_root_folder()
+        {
+            Mocker.GetMock<IRootFolderService>()
+                  .Setup(s => s.All())
+                  .Returns(new List<RootFolder>
+                  {
+                      new RootFolder { Path = RecycleBin }
+                  });
+
+            Assert.Throws<RecycleBinException>(() => Mocker.Resolve<RecycleBinProvider>().Empty());
+
+            Mocker.GetMock<IDiskProvider>().Verify(v => v.DeleteFolder(It.IsAny<string>(), true), Times.Never());
+            Mocker.GetMock<IDiskProvider>().Verify(v => v.DeleteFile(It.IsAny<string>()), Times.Never());
         }
     }
 }

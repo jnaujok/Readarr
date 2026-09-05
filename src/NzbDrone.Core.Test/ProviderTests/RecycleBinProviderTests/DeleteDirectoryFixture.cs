@@ -61,6 +61,24 @@ namespace NzbDrone.Core.Test.ProviderTests.RecycleBinProviderTests
         }
 
         [Test]
+        public void should_suffix_destination_when_folder_already_exists_in_recycle_bin()
+        {
+            WithRecycleBin();
+
+            var path = @"C:\Test\TV\30 Rock".AsOsAgnostic();
+            var existing = @"C:\Test\Recycle Bin\30 Rock".AsOsAgnostic();
+
+            Mocker.GetMock<IDiskProvider>()
+                  .Setup(s => s.FolderExists(existing))
+                  .Returns(true);
+
+            Mocker.Resolve<RecycleBinProvider>().DeleteFolder(path);
+
+            Mocker.GetMock<IDiskTransferService>()
+                  .Verify(v => v.TransferFolder(path, @"C:\Test\Recycle Bin\30 Rock_2".AsOsAgnostic(), TransferMode.Move), Times.Once());
+        }
+
+        [Test]
         public void should_call_fileSetLastWriteTime_for_each_file()
         {
             WindowsOnly();

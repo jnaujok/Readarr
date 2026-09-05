@@ -56,6 +56,28 @@ namespace NzbDrone.Core.Test.Download.TrackedDownloads
         }
 
         [Test]
+        public void should_return_false_if_download_is_unidentified()
+        {
+            _trackedDownload.RemoteBook = null;
+            GivenHistoryForEpisode(Builder<Book>.CreateNew().Build(), EntityHistoryEventType.BookFileImported);
+
+            Subject.IsImported(_trackedDownload, _historyItems)
+                   .Should()
+                   .BeFalse();
+        }
+
+        [Test]
+        public void should_return_false_if_remote_book_has_no_books()
+        {
+            _trackedDownload.RemoteBook.Books = new List<Book>();
+            GivenHistoryForEpisode(Builder<Book>.CreateNew().Build(), EntityHistoryEventType.BookFileImported);
+
+            Subject.IsImported(_trackedDownload, _historyItems)
+                   .Should()
+                   .BeFalse();
+        }
+
+        [Test]
         public void should_return_false_if_there_is_no_history()
         {
             GivenEpisodes(1);

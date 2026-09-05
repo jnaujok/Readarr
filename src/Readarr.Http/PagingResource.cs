@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using NzbDrone.Core.Datastore;
@@ -6,6 +7,8 @@ namespace Readarr.Http
 {
     public class PagingRequestResource
     {
+        public const int MaxPageSize = 250;
+
         [DefaultValue(1)]
         public int? Page { get; set; }
         [DefaultValue(10)]
@@ -29,8 +32,8 @@ namespace Readarr.Http
 
         public PagingResource(PagingRequestResource requestResource)
         {
-            Page = requestResource.Page ?? 1;
-            PageSize = requestResource.PageSize ?? 10;
+            Page = Math.Max(requestResource.Page ?? 1, 1);
+            PageSize = Math.Clamp(requestResource.PageSize ?? 10, 1, PagingRequestResource.MaxPageSize);
             SortKey = requestResource.SortKey;
             SortDirection = requestResource.SortDirection ?? SortDirection.Descending;
         }

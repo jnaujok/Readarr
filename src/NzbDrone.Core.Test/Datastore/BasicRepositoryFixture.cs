@@ -311,6 +311,19 @@ namespace NzbDrone.Core.Test.Datastore
             data.Records.Should().BeEquivalentTo(_basicList.OrderByDescending(x => x.LastExecution).Skip((page - 1) * 2).Take(2));
         }
 
+        [Test]
+        public void get_paged_should_reject_invalid_sort_key()
+        {
+            Subject.InsertMany(_basicList);
+
+            Assert.Throws<ArgumentException>(() => Subject.GetPaged(new PagingSpec<ScheduledTask>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortKey = "column; DROP TABLE Commands;--"
+            }));
+        }
+
         [TestCase(1, 2)]
         [TestCase(2, 2)]
         [TestCase(3, 1)]

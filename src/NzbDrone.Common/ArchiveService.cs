@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
 using NLog;
+using NzbDrone.Common.Disk;
 
 namespace NzbDrone.Common
 {
@@ -27,6 +29,8 @@ namespace NzbDrone.Common
         public void Extract(string compressedFile, string destination)
         {
             _logger.Debug("Extracting archive [{0}] to [{1}]", compressedFile, destination);
+
+            Directory.CreateDirectory(destination);
 
             if (compressedFile.EndsWith(".zip", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -59,9 +63,8 @@ namespace NzbDrone.Common
         private void ExtractZip(string compressedFile, string destination)
         {
             using (var fileStream = File.OpenRead(compressedFile))
+            using (var zipFile = new ZipFile(fileStream))
             {
-                var zipFile = new ZipFile(fileStream);
-
                 _logger.Debug("Validating Archive {0}", compressedFile);
 
                 if (!zipFile.TestArchive(true, TestStrategy.FindFirstError, OnZipError))
@@ -73,28 +76,18 @@ namespace NzbDrone.Common
                 {
                     if (!zipEntry.IsFile)
                     {
-                        continue; // Ignore directories
+                        continue;
                     }
 
-                    var entryFileName = zipEntry.Name;
-
-                    // to remove the folder from the entry:- entryFileName = Path.GetFileName(entryFileName);
-                    // Optionally match entrynames against a selection list here to skip as desired.
-                    // The unpacked length is available in the zipEntry.Size property.
-                    var buffer = new byte[4096]; // 4K is optimum
-                    var zipStream = zipFile.GetInputStream(zipEntry);
-
-                    // Manipulate the output filename here as desired.
-                    var fullZipToPath = Path.Combine(destination, entryFileName);
+                    var fullZipToPath = GetSafeExtractPath(destination, zipEntry.Name);
                     var directoryName = Path.GetDirectoryName(fullZipToPath);
-                    if (directoryName.Length > 0)
+                    if (!string.IsNullOrEmpty(directoryName))
                     {
                         Directory.CreateDirectory(directoryName);
                     }
 
-                    // Unzip file in buffered chunks. This is just as fast as unpacking to a buffer the full size
-                    // of the file, but does not waste memory.
-                    // The "using" will close the stream even if an exception occurs.
+                    var buffer = new byte[4096];
+                    using (var zipStream = zipFile.GetInputStream(zipEntry))
                     using (var streamWriter = File.Create(fullZipToPath))
                     {
                         StreamUtils.Copy(zipStream, streamWriter, buffer);
@@ -105,15 +98,64 @@ namespace NzbDrone.Common
 
         private void ExtractTgz(string compressedFile, string destination)
         {
-            Stream inStream = File.OpenRead(compressedFile);
-            Stream gzipStream = new GZipInputStream(inStream);
+            using (var inStream = File.OpenRead(compressedFile))
+            using (var gzipStream = new GZipInputStream(inStream))
+            using (var tarInput = new TarInputStream(gzipStream, Encoding.UTF8))
+            {
+                TarEntry entry;
+                while ((entry = tarInput.GetNextEntry()) != null)
+                {
+                    if (entry.IsDirectory)
+                    {
+                        continue;
+                    }
 
-            var tarArchive = TarArchive.CreateInputTarArchive(gzipStream, null);
-            tarArchive.ExtractContents(destination);
-            tarArchive.Close();
+                    var fullPath = GetSafeExtractPath(destination, entry.Name);
+                    var directoryName = Path.GetDirectoryName(fullPath);
+                    if (!string.IsNullOrEmpty(directoryName))
+                    {
+                        Directory.CreateDirectory(directoryName);
+                    }
 
-            gzipStream.Close();
-            inStream.Close();
+                    using (var outStream = File.Create(fullPath))
+                    {
+                        tarInput.CopyEntryContents(outStream);
+                    }
+                }
+            }
+        }
+
+        private static string GetSafeExtractPath(string destination, string entryName)
+        {
+            if (string.IsNullOrWhiteSpace(entryName))
+            {
+                throw new IOException("Archive entry has an empty name.");
+            }
+
+            var relative = entryName.Replace('/', Path.DirectorySeparatorChar)
+                                    .Replace('\\', Path.DirectorySeparatorChar);
+
+            if (Path.IsPathRooted(relative))
+            {
+                throw new IOException($"Archive entry '{entryName}' is rooted and will not be extracted.");
+            }
+
+            var destinationRoot = Path.GetFullPath(destination);
+            if (destinationRoot.Length > 0 &&
+                destinationRoot[destinationRoot.Length - 1] != Path.DirectorySeparatorChar &&
+                destinationRoot[destinationRoot.Length - 1] != Path.AltDirectorySeparatorChar)
+            {
+                destinationRoot += Path.DirectorySeparatorChar;
+            }
+
+            var fullPath = Path.GetFullPath(Path.Combine(destinationRoot, relative));
+
+            if (!fullPath.StartsWith(destinationRoot, DiskProviderBase.PathStringComparison))
+            {
+                throw new IOException($"Archive entry '{entryName}' would extract outside '{destination}'.");
+            }
+
+            return fullPath;
         }
 
         private void OnZipError(TestStatus status, string message)

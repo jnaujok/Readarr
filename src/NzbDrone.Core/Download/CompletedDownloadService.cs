@@ -121,9 +121,17 @@ namespace NzbDrone.Core.Download
 
         public bool VerifyImport(TrackedDownload trackedDownload, List<ImportResult> importResults)
         {
+            var expectedBookCount = trackedDownload.RemoteBook?.Books?.Count ?? 0;
+
+            if (expectedBookCount == 0)
+            {
+                _logger.Debug("Download '{0}' is unidentified; not marking imported", trackedDownload.DownloadItem.Title);
+                return false;
+            }
+
             var allItemsImported = importResults.Where(c => c.Result == ImportResultType.Imported)
                                                    .Select(c => c.ImportDecision.Item.Book)
-                                                   .Count() >= Math.Max(1, trackedDownload.RemoteBook?.Books.Count ?? 1);
+                                                   .Count() >= expectedBookCount;
 
             if (allItemsImported)
             {
