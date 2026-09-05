@@ -34,7 +34,7 @@ namespace NzbDrone.Core.Authentication
             {
                 Identifier = Guid.NewGuid(),
                 Username = username.ToLowerInvariant(),
-                Password = password.SHA256Hash()
+                Password = PasswordHasher.Hash(password)
             });
         }
 
@@ -52,9 +52,13 @@ namespace NzbDrone.Core.Authentication
                 return Add(username, password);
             }
 
-            if (user.Password != password)
+            if (password.IsNotNullOrWhiteSpace() && !PasswordHasher.Verify(password, user.Password))
             {
-                user.Password = password.SHA256Hash();
+                user.Password = PasswordHasher.Hash(password);
+            }
+            else if (password.IsNotNullOrWhiteSpace() && PasswordHasher.NeedsRehash(user.Password))
+            {
+                user.Password = PasswordHasher.Hash(password);
             }
 
             user.Username = username.ToLowerInvariant();
@@ -81,12 +85,18 @@ namespace NzbDrone.Core.Authentication
                 return null;
             }
 
-            if (user.Password == password.SHA256Hash())
+            if (!PasswordHasher.Verify(password, user.Password))
             {
-                return user;
+                return null;
             }
 
-            return null;
+            if (PasswordHasher.NeedsRehash(user.Password))
+            {
+                user.Password = PasswordHasher.Hash(password);
+                _repo.Update(user);
+            }
+
+            return user;
         }
 
         public User FindUser(Guid identifier)

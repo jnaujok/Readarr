@@ -47,14 +47,10 @@ namespace NzbDrone.Core.Messaging.Commands
 
         public List<CommandModel> All()
         {
-            List<CommandModel> rval = null;
-
             lock (_mutex)
             {
-                rval = _items;
+                return new List<CommandModel>(_items);
             }
-
-            return rval;
         }
 
         public CommandModel Find(int id)

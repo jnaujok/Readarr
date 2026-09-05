@@ -51,6 +51,14 @@ namespace NzbDrone.Host
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            _logger.Info("Host stop requested");
+
+            if (!_runtimeInfo.IsExiting)
+            {
+                _runtimeInfo.IsExiting = true;
+                _eventAggregator.PublishEvent(new ApplicationShutdownRequested(false));
+            }
+
             return Task.CompletedTask;
         }
 
@@ -104,14 +112,20 @@ namespace NzbDrone.Host
         [EventHandleOrder(EventHandleOrder.Last)]
         public void Handle(ApplicationShutdownRequested message)
         {
-            if (!_runtimeInfo.IsWindowsService)
+            if (_runtimeInfo.IsWindowsService)
             {
-                if (message.Restarting)
-                {
-                    _runtimeInfo.RestartPending = true;
-                }
+                return;
+            }
 
-                LogManager.Configuration = null;
+            if (message.Restarting)
+            {
+                _runtimeInfo.RestartPending = true;
+            }
+
+            LogManager.Configuration = null;
+
+            if (!_runtimeInfo.IsExiting)
+            {
                 Shutdown();
             }
         }

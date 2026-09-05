@@ -29,12 +29,22 @@ namespace NzbDrone.Core.MetadataSource.Goodreads
             _cachedHttpClient = cachedHttpClient;
             _logger = logger;
 
-            _requestBuilder = new HttpRequestBuilder("https://www.goodreads.com/{route}")
-                .AddQueryParam("key", new string("gSuM2Onzl6sjMU25HY1Xcd".Reverse().ToArray()))
+            var requestBuilder = new HttpRequestBuilder("https://www.goodreads.com/{route}")
                 .AddQueryParam("_nc", "1")
                 .SetHeader("User-Agent", "Dalvik/1.6.0 (Linux; U; Android 4.1.2; GT-I9100 Build/JZO54K)")
-                .KeepAlive()
-                .CreateFactory();
+                .KeepAlive();
+
+            var apiKey = Environment.GetEnvironmentVariable("READARR_GOODREADS_API_KEY");
+            if (apiKey.IsNotNullOrWhiteSpace())
+            {
+                requestBuilder.AddQueryParam("key", apiKey);
+            }
+            else
+            {
+                logger.Debug("READARR_GOODREADS_API_KEY is not set; Goodreads requests will not include an API key");
+            }
+
+            _requestBuilder = requestBuilder.CreateFactory();
         }
 
         public SeriesResource GetSeriesInfo(int foreignSeriesId, bool useCache = true)

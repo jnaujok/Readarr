@@ -57,7 +57,7 @@ namespace NzbDrone.Common.Disk
                 throw new IOException(string.Format("Source and destination can't be the same {0}", sourcePath));
             }
 
-            if (mode == TransferMode.Move && sourcePath.PathEquals(targetPath, StringComparison.InvariantCultureIgnoreCase) && _diskProvider.FolderExists(targetPath))
+            if (mode == TransferMode.Move && sourcePath.PathEquals(targetPath) && _diskProvider.FolderExists(targetPath))
             {
                 // Move folder out of the way to allow case-insensitive renames
                 var tempPath = sourcePath + ".backup~";
@@ -271,7 +271,7 @@ namespace NzbDrone.Common.Disk
                 throw new IOException(string.Format("Source and destination can't be the same {0}", sourcePath));
             }
 
-            if (sourcePath.PathEquals(targetPath, StringComparison.InvariantCultureIgnoreCase))
+            if (sourcePath.PathEquals(targetPath))
             {
                 if (mode.HasFlag(TransferMode.HardLink) || mode.HasFlag(TransferMode.Copy))
                 {

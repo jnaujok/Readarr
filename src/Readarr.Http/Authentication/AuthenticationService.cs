@@ -17,12 +17,14 @@ namespace Readarr.Http.Authentication
     {
         private static readonly Logger _authLogger = LogManager.GetLogger("Auth");
         private readonly IUserService _userService;
+        private readonly LoginRateLimiter _loginRateLimiter;
 
         private static AuthenticationType AUTH_METHOD;
 
-        public AuthenticationService(IConfigFileProvider configFileProvider, IUserService userService)
+        public AuthenticationService(IConfigFileProvider configFileProvider, IUserService userService, LoginRateLimiter loginRateLimiter)
         {
             _userService = userService;
+            _loginRateLimiter = loginRateLimiter;
             AUTH_METHOD = configFileProvider.AuthenticationMethod;
         }
 
@@ -33,15 +35,25 @@ namespace Readarr.Http.Authentication
                 return null;
             }
 
+            var ip = request.GetRemoteIP();
+
+            if (_loginRateLimiter.IsBlocked(ip))
+            {
+                _authLogger.Warn("Auth-Throttled ip {0} username '{1}'", ip, username);
+                return null;
+            }
+
             var user = _userService.FindUser(username, password);
 
             if (user != null)
             {
+                _loginRateLimiter.RecordSuccess(ip);
                 LogSuccess(request, username);
 
                 return user;
             }
 
+            _loginRateLimiter.RecordFailure(ip);
             LogFailure(request, username);
 
             return null;

@@ -34,6 +34,11 @@ namespace Readarr.Http.Frontend.Mappers
         {
             var filePath = Map(resourceUrl);
 
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return null;
+            }
+
             if (_diskProvider.FileExists(filePath, _caseSensitive))
             {
                 if (!_mimeTypeProvider.TryGetContentType(filePath, out var contentType))
@@ -55,6 +60,40 @@ namespace Readarr.Http.Frontend.Mappers
         protected virtual Stream GetContentStream(string filePath)
         {
             return File.OpenRead(filePath);
+        }
+
+        protected static string ConfineToRoot(string root, string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(root) || string.IsNullOrWhiteSpace(relativePath))
+            {
+                return null;
+            }
+
+            var relative = relativePath.Replace('/', Path.DirectorySeparatorChar)
+                                       .Replace('\\', Path.DirectorySeparatorChar)
+                                       .Trim(Path.DirectorySeparatorChar);
+
+            if (Path.IsPathRooted(relative))
+            {
+                return null;
+            }
+
+            var rootFull = Path.GetFullPath(root);
+            if (rootFull.Length > 0 &&
+                rootFull[rootFull.Length - 1] != Path.DirectorySeparatorChar &&
+                rootFull[rootFull.Length - 1] != Path.AltDirectorySeparatorChar)
+            {
+                rootFull += Path.DirectorySeparatorChar;
+            }
+
+            var fullPath = Path.GetFullPath(Path.Combine(rootFull, relative));
+
+            if (!fullPath.StartsWith(rootFull, DiskProviderBase.PathStringComparison))
+            {
+                return null;
+            }
+
+            return fullPath;
         }
     }
 }

@@ -218,5 +218,19 @@ namespace NzbDrone.Core.Test.Messaging.Commands
 
             command.Should().BeNull();
         }
+
+        [Test]
+        public void all_returns_a_copy()
+        {
+            GivenStartedDiskCommand();
+
+            var snapshot = Subject.All();
+            snapshot.Should().HaveCount(1);
+
+            GivenLongRunningCommand();
+
+            snapshot.Should().HaveCount(1);
+            Subject.All().Should().HaveCount(2);
+        }
     }
 }

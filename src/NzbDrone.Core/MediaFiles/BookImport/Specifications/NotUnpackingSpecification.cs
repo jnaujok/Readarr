@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using NLog;
 using NzbDrone.Common.Disk;
-using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.DecisionEngine;
 using NzbDrone.Core.Download;
@@ -38,12 +37,6 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Specifications
                 {
                     if (parent.Name.StartsWith(workingFolder))
                     {
-                        if (OsInfo.IsNotWindows)
-                        {
-                            _logger.Debug("{0} is still being unpacked", item.Path);
-                            return Decision.Reject("File is still being unpacked");
-                        }
-
                         if (_diskProvider.FileGetLastWrite(item.Path) > DateTime.UtcNow.AddMinutes(-5))
                         {
                             _logger.Debug("{0} appears to be unpacking still", item.Path);
