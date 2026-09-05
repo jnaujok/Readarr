@@ -188,16 +188,16 @@ namespace NzbDrone.Core.Test.MediaFiles
         }
 
         [Test]
-        [Ignore("Pending readarr fix")]
         public void should_import_if_existing_file_doesnt_exist_in_db()
         {
             _localTrack.Book = Builder<Book>.CreateNew()
-                .With(e => e.BookFiles = new LazyLoaded<List<BookFile>>())
+                .With(e => e.BookFiles = new LazyLoaded<List<BookFile>>(new List<BookFile>()))
                 .Build();
 
             Subject.UpgradeBookFile(_trackFile, _localTrack);
 
-            // Mocker.GetMock<IMediaFileService>().Verify(v => v.Delete(_localTrack.Book.BookFiles.Value, It.IsAny<DeleteMediaFileReason>()), Times.Never());
+            Mocker.GetMock<IMediaFileService>().Verify(v => v.Delete(It.IsAny<BookFile>(), It.IsAny<DeleteMediaFileReason>()), Times.Never());
+            Mocker.GetMock<IMoveBookFiles>().Verify(v => v.MoveBookFile(_trackFile, _localTrack), Times.Once());
         }
     }
 }
