@@ -21,9 +21,7 @@ namespace NzbDrone.Integration.Test.Client
 
         public List<AuthorResource> Editor(AuthorEditorResource author)
         {
-            var request = BuildRequest("editor");
-            AddNewtonsoftJsonBody(request, author);
-            return Put<List<AuthorResource>>(request);
+            return SendJson<List<AuthorResource>>(Method.PUT, BuildRequest("editor"), author, HttpStatusCode.Accepted);
         }
 
         public AuthorResource Get(string slug, HttpStatusCode statusCode = HttpStatusCode.OK)
