@@ -10,13 +10,17 @@ namespace NzbDrone.Common.Cloud
 
     public class ReadarrCloudRequestBuilder : IReadarrCloudRequestBuilder
     {
+        // rreading-glasses drop-in for the retired BookInfo service.
+        // Custom MetadataSource values should be the origin only (no /v1), e.g. https://api.bookinfo.pro
+        public const string DefaultMetadataUrl = "https://api.bookinfo.pro/{route}";
+
         public ReadarrCloudRequestBuilder()
         {
             //TODO: Create Update Endpoint
             Services = new HttpRequestBuilder("https://readarr.servarr.com/v1/")
                 .CreateFactory();
 
-            Metadata = new HttpRequestBuilder("https://api.bookinfo.club/v1/{route}")
+            Metadata = new HttpRequestBuilder(DefaultMetadataUrl)
                 .CreateFactory();
         }
 

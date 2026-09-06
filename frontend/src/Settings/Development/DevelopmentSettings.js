@@ -69,8 +69,9 @@ class DevelopmentSettings extends Component {
                     <FormInputGroup
                       type={inputTypes.TEXT}
                       name="metadataSource"
+                      placeholder="https://api.bookinfo.pro"
                       helpText={translate('MetadataSourceHelpText')}
-                      helpLink="https://wiki.servarr.com/readarr/settings#metadata"
+                      helpLink="https://github.com/blampe/rreading-glasses"
                       onChange={onInputChange}
                       {...settings.metadataSource}
                     />

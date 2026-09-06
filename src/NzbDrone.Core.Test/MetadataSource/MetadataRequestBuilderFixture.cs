@@ -20,7 +20,7 @@ namespace NzbDrone.Core.Test.MetadataSource
 
             Mocker.GetMock<IReadarrCloudRequestBuilder>()
                 .Setup(s => s.Metadata)
-                .Returns(new HttpRequestBuilder("https://api.bookinfo.club/v1/{route}").CreateFactory());
+                .Returns(new HttpRequestBuilder(ReadarrCloudRequestBuilder.DefaultMetadataUrl).CreateFactory());
         }
 
         private void WithCustomProvider()
@@ -45,7 +45,18 @@ namespace NzbDrone.Core.Test.MetadataSource
         {
             var details = Subject.GetRequestBuilder().Create();
 
-            details.BaseUrl.ToString().Should().Contain("bookinfo.club/v1");
+            details.BaseUrl.ToString().Should().Contain("api.bookinfo.pro");
+            details.BaseUrl.ToString().Should().NotContain("/v1/");
+        }
+
+        [Test]
+        public void default_url_is_rreading_glasses_without_v1_prefix()
+        {
+            ReadarrCloudRequestBuilder.DefaultMetadataUrl.Should().Be("https://api.bookinfo.pro/{route}");
+
+            var cloud = new ReadarrCloudRequestBuilder();
+            cloud.Metadata.Create().BaseUrl.ToString().Should().Contain("api.bookinfo.pro");
+            cloud.Metadata.Create().BaseUrl.ToString().Should().NotContain("/v1/");
         }
     }
 }
