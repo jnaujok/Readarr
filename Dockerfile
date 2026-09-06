@@ -4,7 +4,7 @@
 # Run:   docker run --rm -p 8787:8787 -v readarr-config:/config readarr:local
 
 ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
-# .NET 10 does not publish Debian bookworm-slim images. The 10.0 tag is Ubuntu.
+# Documented .NET 10 tag (Ubuntu). Debian bookworm-slim is not published.
 ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0
 ARG NODE_IMAGE=node:20.11.1-bookworm
 
@@ -41,6 +41,7 @@ ENV READARRVERSION=${READARRVERSION} \
 WORKDIR /src
 COPY build.sh LICENSE.md global.json ./
 COPY src ./src
+COPY distribution ./distribution
 RUN --mount=type=cache,target=/root/.nuget/packages \
     chmod +x build.sh \
     && ./build.sh --backend -r linux-x64 -f net10.0
