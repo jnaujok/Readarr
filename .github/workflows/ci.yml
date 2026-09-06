@@ -1,0 +1,513 @@
+# Readarr GitHub Actions CI
+#
+# Azure Pipelines (azure-pipelines.yml) remains the historical Servarr
+# multi-OS/package pipeline and is not replaced by this workflow.
+#
+# This workflow is the GitHub-native path: format/lint, unit tests with a
+# Coverlet ≥80% line gate (Ash), Semgrep + Trivy, linux-x64 package, and a
+# multi-stage Docker image published to GHCR.
+#
+# .NET version: coordinated with Ash. This tree is net8.0 (global.json
+# 8.0.411). Do not use sdk:10.0 until the TFM moves. Azure Pipelines still
+# uses 8.0.x and is not replaced by this workflow.
+#
+# Local mirrors of the critical stages are listed in the workflow comments
+# at the bottom of this file.
+
+name: CI
+
+on:
+  push:
+    branches: [develop, main, master]
+    tags: ["*"]
+  pull_request:
+    branches: [develop, main, master]
+    paths-ignore:
+      - "**.md"
+      - "src/NzbDrone.Core/Localization/Core/**"
+      - "src/Readarr.Api.*/openapi.json"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  DOTNET_NOLOGO: "true"
+  NUGET_XMLDOC_MODE: skip
+  FORCE_COLOR: "0"
+  # Pin matches global.json (Ash). TFM is net8.0, not net10.
+  DOTNET_VERSION: "8.0.411"
+  NODE_VERSION: "20.11.1"
+  YARN_VERSION: "1.22.19"
+  READARRVERSION: "0.4.19.${{ github.run_number }}"
+  BUILD_SOURCEBRANCHNAME: ${{ github.ref_name }}
+  COVERAGE_THRESHOLD: "80"
+  REGISTRY: ghcr.io
+
+jobs:
+  frontend:
+    name: Frontend lint and webpack
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Enable Yarn 1
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+
+      - name: Install UI dependencies
+        run: yarn install --frozen-lockfile --network-timeout 120000
+
+      - name: ESLint
+        run: yarn lint
+
+      - name: Stylelint
+        run: yarn stylelint-linux
+
+      - name: Webpack production build
+        run: yarn run build --env production
+
+      - name: Upload UI
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-ui
+          path: _output/UI
+          if-no-files-found: error
+          retention-days: 7
+
+  backend:
+    name: Backend build, unit tests, coverage
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: src/Directory.Packages.props
+
+      - name: Restore
+        run: dotnet restore src/Readarr.sln
+
+      # House style is StyleCop + TreatWarningsAsErrors during build.
+      # Keep Ash's format verify visible; do not fail the tree on first introduction.
+      - name: dotnet format verify
+        continue-on-error: true
+        run: dotnet format src/Readarr.sln --verify-no-changes --no-restore
+
+      - name: Build and publish linux-x64
+        run: |
+          chmod +x build.sh
+          ./build.sh --backend -r linux-x64 -f net8.0
+
+      - name: Unit tests with Coverlet
+        env:
+          TEST_PUBLISH: _tests/net8.0/linux-x64/publish
+        run: |
+          set -euo pipefail
+          chmod a+x "${TEST_PUBLISH}/Readarr.Test.Dummy" || true
+          mkdir -p TestResults
+          dotnet test \
+            "${TEST_PUBLISH}/Readarr.Api.Test.dll" \
+            "${TEST_PUBLISH}/Readarr.Common.Test.dll" \
+            "${TEST_PUBLISH}/Readarr.Core.Test.dll" \
+            "${TEST_PUBLISH}/Readarr.Host.Test.dll" \
+            "${TEST_PUBLISH}/Readarr.Libraries.Test.dll" \
+            "${TEST_PUBLISH}/Readarr.Mono.Test.dll" \
+            "${TEST_PUBLISH}/Readarr.Update.Test.dll" \
+            --filter "Category!=ManualTest&Category!=IntegrationTest&Category!=AutomationTest" \
+            --settings src/coverlet.ci.runsettings \
+            --collect "XPlat Code Coverage" \
+            --logger "trx;LogFileName=unit.trx" \
+            --logger "nunit;LogFilePath=TestResults/TestResult.xml" \
+            --results-directory TestResults \
+            --verbosity minimal
+
+      - name: Merge coverage and enforce 80% line gate
+        if: always()
+        run: |
+          set -euo pipefail
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.4.4
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          mapfile -t reports < <(find TestResults -name 'coverage.cobertura.xml' -print)
+          if [[ ${#reports[@]} -eq 0 ]]; then
+            echo "No Coverlet cobertura files were produced." >&2
+            exit 1
+          fi
+          reportgenerator \
+            "-reports:TestResults/**/coverage.cobertura.xml" \
+            "-targetdir:coverage" \
+            "-reporttypes:HtmlInline_AzurePipelines;Cobertura;TextSummary"
+          cat coverage/Summary.txt
+          python3 - <<'PY'
+          import os, sys, xml.etree.ElementTree as ET
+          threshold = float(os.environ["COVERAGE_THRESHOLD"])
+          root = ET.parse("coverage/Cobertura.xml").getroot()
+          rate = float(root.get("line-rate", "0")) * 100.0
+          summary = f"Line coverage: {rate:.2f}% (gate: {threshold:.0f}%)"
+          print(summary)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+              fh.write(f"## Coverlet\n\n{summary}\n")
+          if rate + 1e-9 < threshold:
+              print(f"Coverage gate failed: {rate:.2f}% < {threshold:.0f}%", file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Upload test and coverage results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: |
+            TestResults
+            coverage
+          retention-days: 7
+
+      - name: Upload backend output
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-backend
+          path: _output
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload unit-test publish folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-tests
+          path: _tests/net8.0/linux-x64/publish
+          if-no-files-found: error
+          retention-days: 7
+
+  analyze:
+    name: SAST and filesystem CVE scan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Semgrep SAST
+        continue-on-error: true
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep \
+            semgrep scan --config auto --sarif --output semgrep.sarif
+
+      - name: Upload Semgrep SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+      # Pin trivy-action to the post-compromise v-prefixed tag (v0.36.0+).
+      - name: Trivy filesystem scan
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          format: sarif
+          output: trivy-fs.sarif
+          exit-code: "0"
+
+      - name: Upload Trivy filesystem SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+      - name: Trivy filesystem table
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          format: table
+          exit-code: "0"
+
+  package:
+    name: linux-x64 package
+    runs-on: ubuntu-22.04
+    needs: [frontend, backend]
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download backend output
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-x64-backend
+          path: _output
+
+      - name: Download UI
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-ui
+          path: _output/UI
+
+      - name: Assemble package
+        run: |
+          chmod +x build.sh
+          ./build.sh --packages -r linux-x64 -f net8.0
+          find _artifacts -name Readarr -exec chmod a+x {} \;
+          find _artifacts -name Readarr.Update -exec chmod a+x {} \;
+          mkdir -p dist
+          tar -czf "dist/Readarr.${READARRVERSION}.linux-core-x64.tar.gz" \
+            -C _artifacts/linux-x64/net8.0 Readarr
+
+      - name: Upload linux-x64 tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-package
+          path: dist/Readarr.*.linux-core-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  integration:
+    name: Integration tests (linux-x64)
+    runs-on: ubuntu-22.04
+    needs: [package, backend]
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-x64-package
+          path: dist
+
+      - name: Download tests
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-x64-tests
+          path: _tests
+
+      - name: Extract package into ./bin
+        run: |
+          mkdir -p bin
+          tar -xzf dist/Readarr.*.linux-core-x64.tar.gz -C .
+          cp -a Readarr/. bin/
+          chmod a+x bin/Readarr || true
+          chmod a+x bin/Readarr.Update/Readarr.Update || true
+          find _tests -name Readarr.Test.Dummy -exec chmod a+x {} \;
+
+      - name: Run integration tests
+        run: |
+          mkdir -p TestResults
+          dotnet test \
+            _tests/Readarr.Integration.Test.dll \
+            --filter "Category=IntegrationTest" \
+            --logger "trx;LogFileName=integration.trx" \
+            --logger "nunit;LogFilePath=TestResults/TestResult.xml" \
+            --results-directory TestResults \
+            --verbosity minimal
+
+      - name: Upload integration results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: TestResults
+          retention-days: 7
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-22.04
+    needs: [frontend, backend]
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+          labels: |
+            org.opencontainers.image.title=Readarr
+            org.opencontainers.image.description=Ebook and audiobook collection manager
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            READARRVERSION=${{ env.READARRVERSION }}
+            BRANCH=${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: First image tag
+        id: image
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          tag=$(printf '%s\n' "$TAGS" | awk 'NF { print; exit }')
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy image scan
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.image.outputs.tag }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: "0"
+
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      tag: ${{ steps.image.outputs.tag }}
+
+  image-scan:
+    name: Image scan and SBOM
+    runs-on: ubuntu-22.04
+    needs: [docker]
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          echo "image=${{ needs.docker.outputs.tag }}" >> "$GITHUB_OUTPUT"
+          echo "Scanning ${{ needs.docker.outputs.tag }}"
+
+      # First-land baseline: keep the scan visible. Tighten exit-code after the
+      # aspnet:8.0 image is clean of unfixed HIGH/CRITICAL findings.
+      - name: Trivy image scan
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.tag.outputs.image }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: "0"
+
+      - name: Trivy image SARIF
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.tag.outputs.image }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-image.sarif
+          exit-code: "0"
+
+      - name: Upload Trivy image SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Generate CycloneDX SBOM
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.tag.outputs.image }}
+          scan-type: image
+          format: cyclonedx
+          output: readarr.cdx.json
+          exit-code: "0"
+
+      - name: Upload SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: readarr.cdx.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+# Local reproduction (Linux x86_64):
+#   export READARRVERSION=0.4.19.0 BUILD_SOURCEBRANCHNAME=develop
+#   yarn install --frozen-lockfile && yarn lint && yarn stylelint-linux && yarn run build --env production
+#   ./build.sh --backend --packages -r linux-x64 -f net8.0
+#   dotnet test _tests/net8.0/linux-x64/publish/Readarr.Core.Test.dll --settings src/coverlet.ci.runsettings --collect "XPlat Code Coverage"
+#   docker build --build-arg READARRVERSION=$READARRVERSION --build-arg BRANCH=develop -t readarr:local .
+#   docker run --rm -p 8787:8787 -v readarr-config:/config readarr:local
