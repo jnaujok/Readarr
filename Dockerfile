@@ -61,7 +61,11 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     TZ=Etc/UTC
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl tzdata ca-certificates \
+    && apt-get install -y --no-install-recommends \
+         curl \
+         tzdata \
+         ca-certificates \
+         libsqlite3-0 \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 8787 readarr \
     && useradd --uid 8787 --gid 8787 --create-home --home-dir /config readarr \
