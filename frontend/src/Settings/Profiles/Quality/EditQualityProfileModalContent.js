@@ -124,8 +124,18 @@ class EditQualityProfileModalContent extends Component {
       minFormatScore,
       cutoffFormatScore,
       items,
-      formatItems
+      formatItems,
+      wantedFormatKinds = { value: [] }
     } = item;
+
+    const wantedKinds = wantedFormatKinds.value || [];
+    const onWantedFormatChange = (kind, enabled) => {
+      const next = enabled ?
+        wantedKinds.concat(kind).filter((value, index, list) => list.indexOf(value) === index) :
+        wantedKinds.filter((value) => value !== kind);
+
+      onInputChange({ name: 'wantedFormatKinds', value: next });
+    };
 
     return (
       <ModalContent onModalClose={onModalClose}>
@@ -202,6 +212,36 @@ class EditQualityProfileModalContent extends Component {
                             />
                           </FormGroup>
                       }
+
+                      <FormGroup size={sizes.EXTRA_SMALL}>
+                        <FormLabel size={sizes.SMALL}>
+                          {translate('WantedFormats')}
+                        </FormLabel>
+
+                        <div>
+                          <FormInputGroup
+                            type={inputTypes.CHECK}
+                            name="collectEbooks"
+                            value={wantedKinds.includes(1)}
+                            helpText={translate('CollectEbooks')}
+                            onChange={({ value }) => onWantedFormatChange(1, value)}
+                          />
+                          <FormInputGroup
+                            type={inputTypes.CHECK}
+                            name="collectPdfs"
+                            value={wantedKinds.includes(2)}
+                            helpText={translate('CollectPdfs')}
+                            onChange={({ value }) => onWantedFormatChange(2, value)}
+                          />
+                          <FormInputGroup
+                            type={inputTypes.CHECK}
+                            name="collectAudiobooks"
+                            value={wantedKinds.includes(3)}
+                            helpText={translate('CollectAudiobooks')}
+                            onChange={({ value }) => onWantedFormatChange(3, value)}
+                          />
+                        </div>
+                      </FormGroup>
 
                       {
                         formatItems.value.length > 0 &&

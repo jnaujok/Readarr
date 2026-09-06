@@ -16,6 +16,7 @@ namespace Readarr.Api.V1.Profiles.Quality
         public int MinFormatScore { get; set; }
         public int CutoffFormatScore { get; set; }
         public List<ProfileFormatItemResource> FormatItems { get; set; }
+        public List<NzbDrone.Core.Qualities.BookFormatKind> WantedFormatKinds { get; set; }
     }
 
     public class QualityProfileQualityItemResource : RestResource
@@ -56,7 +57,8 @@ namespace Readarr.Api.V1.Profiles.Quality
                 Items = model.Items.ConvertAll(ToResource),
                 MinFormatScore = model.MinFormatScore,
                 CutoffFormatScore = model.CutoffFormatScore,
-                FormatItems = model.FormatItems.ConvertAll(ToResource)
+                FormatItems = model.FormatItems.ConvertAll(ToResource),
+                WantedFormatKinds = model.WantedFormatKinds ?? new List<NzbDrone.Core.Qualities.BookFormatKind>()
             };
         }
 
@@ -103,7 +105,8 @@ namespace Readarr.Api.V1.Profiles.Quality
                 Items = resource.Items.ConvertAll(ToModel),
                 MinFormatScore = resource.MinFormatScore,
                 CutoffFormatScore = resource.CutoffFormatScore,
-                FormatItems = resource.FormatItems.ConvertAll(ToModel)
+                FormatItems = resource.FormatItems.ConvertAll(ToModel),
+                WantedFormatKinds = resource.WantedFormatKinds ?? new List<NzbDrone.Core.Qualities.BookFormatKind>()
             };
         }
 

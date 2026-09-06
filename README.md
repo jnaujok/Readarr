@@ -49,7 +49,7 @@ The original Servarr retirement notice still applies to [Readarr/Readarr](https:
 
 ## Features
 
-Readarr watches RSS feeds for books from authors you follow, then grabs, sorts, and renames them. One format of a given book is supported per instance. If you want both an audiobook and an ebook of the same title, run two instances.
+Readarr watches RSS feeds for books from authors you follow, then grabs, sorts, and renames them. Quality profiles can collect ebooks, PDFs, and audiobooks as independent copies of the same title, with a per-book override.
 
 - Automatic quality upgrades (for example PDF → AZW3)
 - Windows, Linux, macOS, and Raspberry Pi

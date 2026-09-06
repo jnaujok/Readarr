@@ -40,6 +40,7 @@ namespace NzbDrone.Core.Books
         public string CleanTitle { get; set; }
         public bool Monitored { get; set; }
         public bool AnyEditionOk { get; set; }
+        public List<NzbDrone.Core.Qualities.BookFormatKind> WantedFormatKinds { get; set; }
         public DateTime? LastInfoSync { get; set; }
         public DateTime Added { get; set; }
         [MemberwiseEqualityIgnore]
@@ -90,6 +91,7 @@ namespace NzbDrone.Core.Books
             AuthorMetadataId = other.AuthorMetadataId;
             Monitored = other.Monitored;
             AnyEditionOk = other.AnyEditionOk;
+            WantedFormatKinds = other.WantedFormatKinds;
             LastInfoSync = other.LastInfoSync;
             LastSearchTime = other.LastSearchTime;
             Added = other.Added;
@@ -103,6 +105,7 @@ namespace NzbDrone.Core.Books
             AddOptions = other.AddOptions;
             Monitored = other.Monitored;
             AnyEditionOk = other.AnyEditionOk;
+            WantedFormatKinds = other.WantedFormatKinds;
         }
     }
 }

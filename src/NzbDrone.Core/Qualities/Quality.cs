@@ -82,6 +82,24 @@ namespace NzbDrone.Core.Qualities
 
         public bool IsAudio => Id >= 10;
 
+        public BookFormatKind FormatKind
+        {
+            get
+            {
+                if (IsAudio)
+                {
+                    return BookFormatKind.Audiobook;
+                }
+
+                if (Id == PDF.Id)
+                {
+                    return BookFormatKind.Pdf;
+                }
+
+                return BookFormatKind.Ebook;
+            }
+        }
+
         static Quality()
         {
             All = new List<Quality>

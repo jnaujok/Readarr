@@ -13,6 +13,7 @@ namespace NzbDrone.Core.MediaFiles
         List<BookFile> GetFilesByAuthor(int authorId);
         List<BookFile> GetFilesByAuthorMetadataId(int authorMetadataId);
         List<BookFile> GetFilesByBook(int bookId);
+        List<BookFile> GetFilesByBooks(IEnumerable<int> bookIds);
         List<BookFile> GetFilesByEdition(int editionId);
         List<BookFile> GetUnmappedFiles();
         List<BookFile> GetFilesWithBasePath(string path);
@@ -77,6 +78,18 @@ namespace NzbDrone.Core.MediaFiles
         public List<BookFile> GetFilesByBook(int bookId)
         {
             return Query(Builder().Where<Book>(b => b.Id == bookId));
+        }
+
+        public List<BookFile> GetFilesByBooks(IEnumerable<int> bookIds)
+        {
+            var ids = bookIds.ToList();
+
+            if (!ids.Any())
+            {
+                return new List<BookFile>();
+            }
+
+            return Query(Builder().Where<Book>(b => ids.Contains(b.Id)));
         }
 
         public List<BookFile> GetFilesByEdition(int editionId)

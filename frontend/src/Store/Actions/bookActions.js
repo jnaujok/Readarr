@@ -119,6 +119,10 @@ export const filters = [
 
 export const filterPredicates = {
   missing: function(item) {
+    if (item.missingFormats && item.missingFormats.length) {
+      return true;
+    }
+
     const { statistics = {} } = item;
 
     return !statistics.hasOwnProperty('bookFileCount') || statistics.bookFileCount === 0;

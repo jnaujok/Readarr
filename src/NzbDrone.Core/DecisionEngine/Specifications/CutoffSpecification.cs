@@ -4,6 +4,7 @@ using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.IndexerSearch.Definitions;
+using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Qualities;
 
@@ -31,9 +32,19 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
         {
             var qualityProfile = subject.Author.QualityProfile.Value;
 
-            foreach (var file in subject.Books.SelectMany(b => b.BookFiles.Value))
+            var incomingKind = subject.ParsedBookInfo.Quality?.Quality?.FormatKind;
+            var filesOfKind = subject.Books
+                .SelectMany(b => b.BookFiles.Value ?? new List<BookFile>())
+                .Where(f => f != null && f.Quality?.Quality?.FormatKind == incomingKind)
+                .ToList();
+
+            if (!filesOfKind.Any())
             {
-                // Get a distinct list of all current track qualities for a given book
+                return Decision.Accept();
+            }
+
+            foreach (var file in filesOfKind)
+            {
                 var currentQualities = new List<QualityModel> { file.Quality };
 
                 _logger.Debug("Comparing file quality with report. Existing files contain {0}", currentQualities.ConcatToString());

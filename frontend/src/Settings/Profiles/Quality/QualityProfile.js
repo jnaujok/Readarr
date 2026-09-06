@@ -69,6 +69,7 @@ class QualityProfile extends Component {
       upgradeAllowed,
       cutoff,
       items,
+      wantedFormatKinds = [],
       isDeleting
     } = this.props;
 
@@ -90,6 +91,24 @@ class QualityProfile extends Component {
             onPress={this.onCloneQualityProfilePress}
           />
         </div>
+
+        {
+          !!wantedFormatKinds.length &&
+            <div className={styles.qualities}>
+              {
+                wantedFormatKinds.includes(1) &&
+                  <Label kind={kinds.SUCCESS}>{translate('CollectEbooks')}</Label>
+              }
+              {
+                wantedFormatKinds.includes(2) &&
+                  <Label kind={kinds.SUCCESS}>{translate('CollectPdfs')}</Label>
+              }
+              {
+                wantedFormatKinds.includes(3) &&
+                  <Label kind={kinds.SUCCESS}>{translate('CollectAudiobooks')}</Label>
+              }
+            </div>
+        }
 
         <div className={styles.qualities}>
           {
@@ -179,6 +198,7 @@ QualityProfile.propTypes = {
   upgradeAllowed: PropTypes.bool.isRequired,
   cutoff: PropTypes.number.isRequired,
   items: PropTypes.arrayOf(PropTypes.object).isRequired,
+  wantedFormatKinds: PropTypes.arrayOf(PropTypes.number),
   isDeleting: PropTypes.bool.isRequired,
   onConfirmDeleteQualityProfile: PropTypes.func.isRequired,
   onCloneQualityProfilePress: PropTypes.func.isRequired
