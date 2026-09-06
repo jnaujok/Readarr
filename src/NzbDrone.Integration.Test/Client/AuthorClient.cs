@@ -22,7 +22,7 @@ namespace NzbDrone.Integration.Test.Client
         public List<AuthorResource> Editor(AuthorEditorResource author)
         {
             var request = BuildRequest("editor");
-            request.AddJsonBody(author);
+            AddNewtonsoftJsonBody(request, author);
             return Put<List<AuthorResource>>(request);
         }
 

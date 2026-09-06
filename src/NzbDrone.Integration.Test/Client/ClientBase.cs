@@ -39,6 +39,11 @@ namespace NzbDrone.Integration.Test.Client
             return request;
         }
 
+        public static void AddNewtonsoftJsonBody(IRestRequest request, object body)
+        {
+            request.AddParameter("application/json", Json.ToJson(body), ParameterType.RequestBody);
+        }
+
         public string Execute(IRestRequest request, HttpStatusCode statusCode)
         {
             _logger.Info("{0}: {1}", request.Method, _restClient.BuildUri(request));
@@ -112,14 +117,14 @@ namespace NzbDrone.Integration.Test.Client
         public TResource Post(TResource body, HttpStatusCode statusCode = HttpStatusCode.Created)
         {
             var request = BuildRequest();
-            request.AddJsonBody(body);
+            AddNewtonsoftJsonBody(request, body);
             return Post<TResource>(request, statusCode);
         }
 
         public TResource Put(TResource body, HttpStatusCode statusCode = HttpStatusCode.Accepted)
         {
             var request = BuildRequest(body.Id.ToString());
-            request.AddJsonBody(body);
+            AddNewtonsoftJsonBody(request, body);
             return Put<TResource>(request, statusCode);
         }
 
@@ -150,14 +155,14 @@ namespace NzbDrone.Integration.Test.Client
         public object InvalidPost(TResource body, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
             var request = BuildRequest();
-            request.AddJsonBody(body);
+            AddNewtonsoftJsonBody(request, body);
             return Post<object>(request, statusCode);
         }
 
         public object InvalidPut(TResource body, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
             var request = BuildRequest();
-            request.AddJsonBody(body);
+            AddNewtonsoftJsonBody(request, body);
             return Put<object>(request, statusCode);
         }
 

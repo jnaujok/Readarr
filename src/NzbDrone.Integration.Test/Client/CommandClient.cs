@@ -44,7 +44,7 @@ namespace NzbDrone.Integration.Test.Client
             where T : Command, new()
         {
             var request = BuildRequest();
-            request.AddJsonBody(command);
+            AddNewtonsoftJsonBody(request, command);
             var result = Post<SimpleCommandResource>(request);
             result.Id.Should().NotBe(0);
 

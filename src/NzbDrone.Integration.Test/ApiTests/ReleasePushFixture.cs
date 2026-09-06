@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Net;
 using FluentAssertions;
 using NUnit.Framework;
+using NzbDrone.Integration.Test.Client;
 using Readarr.Api.V1.Indexers;
 
 namespace NzbDrone.Integration.Test.ApiTests
@@ -21,7 +22,7 @@ namespace NzbDrone.Integration.Test.ApiTests
             body.Add("publishDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ssZ", CultureInfo.InvariantCulture));
 
             var request = ReleasePush.BuildRequest();
-            request.AddJsonBody(body);
+            ClientBase.AddNewtonsoftJsonBody(request, body);
             var result = ReleasePush.Post<ReleaseResource>(request, HttpStatusCode.OK);
 
             result.Should().NotBeNull();
