@@ -4,7 +4,6 @@ using System.Linq;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.TPL;
-using NzbDrone.Core.Configuration;
 using NzbDrone.Core.MediaFiles.Events;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
@@ -22,7 +21,6 @@ namespace NzbDrone.Core.Download.TrackedDownloads
         private readonly IDownloadClientFactory _downloadClientFactory;
         private readonly IEventAggregator _eventAggregator;
         private readonly IManageCommandQueue _manageCommandQueue;
-        private readonly IConfigService _configService;
         private readonly IFailedDownloadService _failedDownloadService;
         private readonly ICompletedDownloadService _completedDownloadService;
         private readonly ITrackedDownloadService _trackedDownloadService;
@@ -33,7 +31,6 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                                          IDownloadClientFactory downloadClientFactory,
                                          IEventAggregator eventAggregator,
                                          IManageCommandQueue manageCommandQueue,
-                                         IConfigService configService,
                                          IFailedDownloadService failedDownloadService,
                                          ICompletedDownloadService completedDownloadService,
                                          ITrackedDownloadService trackedDownloadService,
@@ -43,7 +40,6 @@ namespace NzbDrone.Core.Download.TrackedDownloads
             _downloadClientFactory = downloadClientFactory;
             _eventAggregator = eventAggregator;
             _manageCommandQueue = manageCommandQueue;
-            _configService = configService;
             _failedDownloadService = failedDownloadService;
             _completedDownloadService = completedDownloadService;
             _trackedDownloadService = trackedDownloadService;
@@ -70,7 +66,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                 {
                     var clientTrackedDownloads = ProcessClientDownloads(downloadClient);
 
-                    trackedDownloads.AddRange(clientTrackedDownloads.Where(DownloadIsTrackable));
+                    trackedDownloads.AddRange(clientTrackedDownloads.Where(DownloadTrackability.ShouldKeepInQueue));
                 }
 
                 _trackedDownloadService.UpdateTrackable(trackedDownloads);
@@ -131,25 +127,6 @@ namespace NzbDrone.Core.Download.TrackedDownloads
             return null;
         }
 
-        private bool DownloadIsTrackable(TrackedDownload trackedDownload)
-        {
-            // If the download has already been imported or failed or the user ignored it don't track it
-            if (trackedDownload.State == TrackedDownloadState.Imported ||
-                trackedDownload.State == TrackedDownloadState.DownloadFailed ||
-                trackedDownload.State == TrackedDownloadState.Ignored)
-            {
-                return false;
-            }
-
-            // If CDH is disabled and the download status is complete don't track it
-            if (!_configService.EnableCompletedDownloadHandling && trackedDownload.DownloadItem.Status == DownloadItemStatus.Completed)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
         public void Execute(RefreshMonitoredDownloadsCommand message)
         {
             Refresh();
@@ -173,14 +150,14 @@ namespace NzbDrone.Core.Download.TrackedDownloads
 
         public void Handle(DownloadsProcessedEvent message)
         {
-            var trackedDownloads = _trackedDownloadService.GetTrackedDownloads().Where(t => t.IsTrackable && DownloadIsTrackable(t)).ToList();
+            var trackedDownloads = _trackedDownloadService.GetTrackedDownloads().Where(t => t.IsTrackable && DownloadTrackability.ShouldKeepInQueue(t)).ToList();
 
             _eventAggregator.PublishEvent(new TrackedDownloadRefreshedEvent(trackedDownloads));
         }
 
         public void Handle(TrackedDownloadsRemovedEvent message)
         {
-            var trackedDownloads = _trackedDownloadService.GetTrackedDownloads().Where(t => t.IsTrackable && DownloadIsTrackable(t)).ToList();
+            var trackedDownloads = _trackedDownloadService.GetTrackedDownloads().Where(t => t.IsTrackable && DownloadTrackability.ShouldKeepInQueue(t)).ToList();
 
             _eventAggregator.PublishEvent(new TrackedDownloadRefreshedEvent(trackedDownloads));
         }

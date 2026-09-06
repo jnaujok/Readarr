@@ -61,6 +61,18 @@ namespace NzbDrone.Core.Test.MusicTests.BookMonitoredServiceTests
         }
 
         [Test]
+        public void should_not_change_books_when_monitoring_options_are_empty()
+        {
+            Subject.SetBookMonitoredStatus(_author, new MonitoringOptions());
+
+            Mocker.GetMock<IAuthorService>()
+                  .Verify(v => v.UpdateAuthor(It.IsAny<Author>()), Times.Once());
+
+            Mocker.GetMock<IBookService>()
+                  .Verify(v => v.UpdateBook(It.IsAny<Book>()), Times.Never());
+        }
+
+        [Test]
         public void should_be_able_to_monitor_books_when_passed_in_author()
         {
             var booksToMonitor = new List<string> { _books.First().ForeignBookId };

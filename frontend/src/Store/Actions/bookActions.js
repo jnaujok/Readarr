@@ -64,6 +64,11 @@ export const filters = [
         key: 'missing',
         value: true,
         type: filterTypes.EQUAL
+      },
+      {
+        key: 'releaseDate',
+        value: moment(),
+        type: filterTypes.LESS_THAN
       }
     ]
   },

@@ -24,7 +24,7 @@ namespace NzbDrone.Core.MediaFiles
     public class MediaFileDeletionService : IDeleteMediaFiles,
                                             IHandle<AuthorDeletedEvent>,
                                             IHandleAsync<AuthorDeletedEvent>,
-                                            IHandleAsync<BookDeletedEvent>,
+                                            IHandle<BookDeletedEvent>,
                                             IHandle<BookFileDeletedEvent>
     {
         private readonly IDiskProvider _diskProvider;
@@ -188,7 +188,8 @@ namespace NzbDrone.Core.MediaFiles
             }
         }
 
-        public void HandleAsync(BookDeletedEvent message)
+        [EventHandleOrder(EventHandleOrder.First)]
+        public void Handle(BookDeletedEvent message)
         {
             if (message.DeleteFiles)
             {

@@ -25,7 +25,8 @@ namespace NzbDrone.Core.Books
 
         public void SetBookMonitoredStatus(Author author, MonitoringOptions monitoringOptions)
         {
-            if (monitoringOptions != null)
+            if (monitoringOptions != null &&
+                (monitoringOptions.BooksToMonitor.Any() || monitoringOptions.Monitor != MonitorTypes.Unknown))
             {
                 _logger.Debug("[{0}] Setting book monitored status.", author.Name);
 

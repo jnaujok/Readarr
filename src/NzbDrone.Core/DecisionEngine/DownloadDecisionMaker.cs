@@ -116,7 +116,7 @@ namespace NzbDrone.Core.DecisionEngine
                         // parse quality again with title and category if unknown
                         if (remoteBook.ParsedBookInfo.Quality.Quality == Quality.Unknown)
                         {
-                            remoteBook.ParsedBookInfo.Quality = QualityParser.ParseQuality(report.Title, null, report.Categories);
+                            remoteBook.ParsedBookInfo.ApplyQuality(report.Title, null, report.Categories);
                         }
 
                         if (remoteBook.Author == null)
@@ -154,10 +154,8 @@ namespace NzbDrone.Core.DecisionEngine
                     {
                         if (parsedBookInfo == null)
                         {
-                            parsedBookInfo = new ParsedBookInfo
-                            {
-                                Quality = QualityParser.ParseQuality(report.Title, null, report.Categories)
-                            };
+                            parsedBookInfo = new ParsedBookInfo();
+                            parsedBookInfo.ApplyQuality(report.Title, null, report.Categories);
                         }
 
                         if (parsedBookInfo.AuthorName.IsNullOrWhiteSpace())
@@ -176,10 +174,8 @@ namespace NzbDrone.Core.DecisionEngine
                     {
                         if (parsedBookInfo == null)
                         {
-                            parsedBookInfo = new ParsedBookInfo
-                            {
-                                Quality = QualityParser.ParseQuality(report.Title, null, report.Categories)
-                            };
+                            parsedBookInfo = new ParsedBookInfo();
+                            parsedBookInfo.ApplyQuality(report.Title, null, report.Categories);
                         }
 
                         if (parsedBookInfo.AuthorName.IsNullOrWhiteSpace())

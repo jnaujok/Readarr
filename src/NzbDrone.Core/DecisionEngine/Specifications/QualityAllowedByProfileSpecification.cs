@@ -1,6 +1,10 @@
+using System.Collections.Generic;
+using System.Linq;
 using NLog;
 using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Profiles.Qualities;
+using NzbDrone.Core.Qualities;
 
 namespace NzbDrone.Core.DecisionEngine.Specifications
 {
@@ -21,16 +25,44 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
             _logger.Debug("Checking if report meets quality requirements. {0}", subject.ParsedBookInfo.Quality);
 
             var profile = subject.Author.QualityProfile.Value;
-            var qualityIndex = profile.GetIndex(subject.ParsedBookInfo.Quality.Quality);
-            var qualityOrGroup = profile.Items[qualityIndex.Index];
+            var qualities = subject.ParsedBookInfo.Qualities;
+            if (qualities == null || !qualities.Any())
+            {
+                qualities = new List<Quality> { subject.ParsedBookInfo.Quality.Quality };
+            }
 
-            if (!qualityOrGroup.Allowed)
+            var allowed = qualities.Where(q => IsAllowed(profile, q)).ToList();
+
+            if (!allowed.Any())
             {
                 _logger.Debug("Quality {0} rejected by Author's quality profile", subject.ParsedBookInfo.Quality);
                 return Decision.Reject("{0} is not wanted in profile", subject.ParsedBookInfo.Quality.Quality);
             }
 
+            if (!allowed.Contains(subject.ParsedBookInfo.Quality.Quality))
+            {
+                subject.ParsedBookInfo.Quality = new QualityModel(allowed[0], subject.ParsedBookInfo.Quality.Revision);
+            }
+
             return Decision.Accept();
+        }
+
+        private static bool IsAllowed(QualityProfile profile, Quality quality)
+        {
+            foreach (var item in profile.Items)
+            {
+                if (item.Quality != null && item.Quality.Id == quality.Id)
+                {
+                    return item.Allowed;
+                }
+
+                if (item.Items != null && item.Items.Any(i => i.Quality != null && i.Quality.Id == quality.Id))
+                {
+                    return item.Allowed;
+                }
+            }
+
+            return false;
         }
     }
 }

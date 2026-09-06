@@ -101,6 +101,16 @@ namespace NzbDrone.Core.Test.ParserTests
             result.Revision.IsRepack.Should().Be(isRepack);
         }
 
+        [TestCase("Pride and Prejudice by Jane Austen [ENG / azw3 epub mobi]")]
+        [TestCase("Some Book (epub, azw3, mobi)")]
+        public void should_parse_all_ebook_formats_in_title(string title)
+        {
+            var qualities = QualityParser.ParseQualities(title);
+            qualities.Should().Contain(Quality.AZW3);
+            qualities.Should().Contain(Quality.EPUB);
+            qualities.Should().Contain(Quality.MOBI);
+        }
+
         private void ParseAndVerifyQuality(string name, string desc, int bitrate, Quality quality, int sampleSize = 0)
         {
             var result = QualityParser.ParseQuality(name);
