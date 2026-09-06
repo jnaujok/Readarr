@@ -41,18 +41,11 @@ namespace NzbDrone.Integration.Test.Client
             return request;
         }
 
-        public static void AddNewtonsoftJsonBody(IRestRequest request, object body)
-        {
-            request.AddParameter("application/json", Json.ToJson(body), ParameterType.RequestBody);
-        }
-
         public string Execute(IRestRequest request, HttpStatusCode statusCode)
         {
             _logger.Info("{0}: {1}", request.Method, _restClient.BuildUri(request));
 
-            var response = request.Method == Method.POST || request.Method == Method.PUT
-                ? ExecuteWithHttpClient(request)
-                : _restClient.Execute(request);
+            var response = _restClient.Execute(request);
             _logger.Info("Response: {0}", response.Content);
 
             if (response.ErrorException != null)
@@ -77,37 +70,32 @@ namespace NzbDrone.Integration.Test.Client
             return Json.Deserialize<T>(content);
         }
 
-        private IRestResponse ExecuteWithHttpClient(IRestRequest request)
+        public T SendJson<T>(Method method, IRestRequest request, object body, HttpStatusCode statusCode)
+            where T : class, new()
         {
             var url = _restClient.BuildUri(request);
-            var bodyParam = request.Parameters.FirstOrDefault(p => p.Type == ParameterType.RequestBody);
-            var json = bodyParam?.Value as string ?? (bodyParam?.Value != null ? Json.ToJson(bodyParam.Value) : null);
+            var json = Json.ToJson(body);
+            _logger.Info("{0}: {1}", method, url);
 
             using var http = new HttpClient();
             http.DefaultRequestHeaders.TryAddWithoutValidation("X-Api-Key", _apiKey);
             http.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", _apiKey);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            using var content = json == null
-                ? null
-                : new StringContent(json, Encoding.UTF8, "application/json");
-
-            var httpResponse = request.Method == Method.PUT
+            var httpResponse = method == Method.PUT
                 ? http.PutAsync(url, content).GetAwaiter().GetResult()
                 : http.PostAsync(url, content).GetAwaiter().GetResult();
 
             var responseContent = httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-            var restResponse = new RestResponse
-            {
-                Content = responseContent,
-                StatusCode = httpResponse.StatusCode
-            };
+            _logger.Info("Response: {0}", responseContent);
+            httpResponse.StatusCode.Should().Be(statusCode, responseContent);
 
-            foreach (var header in httpResponse.Headers.Concat(httpResponse.Content.Headers))
+            if (string.IsNullOrWhiteSpace(responseContent))
             {
-                restResponse.Headers.Add(new Parameter(header.Key, string.Join(",", header.Value), ParameterType.HttpHeader));
+                return default;
             }
 
-            return restResponse;
+            return Json.Deserialize<T>(responseContent);
         }
 
         private static void AssertDisableCache(IRestResponse response)
@@ -153,16 +141,12 @@ namespace NzbDrone.Integration.Test.Client
 
         public TResource Post(TResource body, HttpStatusCode statusCode = HttpStatusCode.Created)
         {
-            var request = BuildRequest();
-            AddNewtonsoftJsonBody(request, body);
-            return Post<TResource>(request, statusCode);
+            return SendJson<TResource>(Method.POST, BuildRequest(), body, statusCode);
         }
 
         public TResource Put(TResource body, HttpStatusCode statusCode = HttpStatusCode.Accepted)
         {
-            var request = BuildRequest(body.Id.ToString());
-            AddNewtonsoftJsonBody(request, body);
-            return Put<TResource>(request, statusCode);
+            return SendJson<TResource>(Method.PUT, BuildRequest(body.Id.ToString()), body, statusCode);
         }
 
         public TResource Get(int id, HttpStatusCode statusCode = HttpStatusCode.OK)
@@ -191,16 +175,12 @@ namespace NzbDrone.Integration.Test.Client
 
         public object InvalidPost(TResource body, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
-            var request = BuildRequest();
-            AddNewtonsoftJsonBody(request, body);
-            return Post<object>(request, statusCode);
+            return SendJson<object>(Method.POST, BuildRequest(), body, statusCode);
         }
 
         public object InvalidPut(TResource body, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
-            var request = BuildRequest();
-            AddNewtonsoftJsonBody(request, body);
-            return Put<object>(request, statusCode);
+            return SendJson<object>(Method.PUT, BuildRequest(), body, statusCode);
         }
 
         public T Get<T>(IRestRequest request, HttpStatusCode statusCode = HttpStatusCode.OK)

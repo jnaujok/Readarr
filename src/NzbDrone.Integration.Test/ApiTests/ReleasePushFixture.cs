@@ -6,6 +6,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Integration.Test.Client;
 using Readarr.Api.V1.Indexers;
+using RestSharp;
 
 namespace NzbDrone.Integration.Test.ApiTests
 {
@@ -21,9 +22,7 @@ namespace NzbDrone.Integration.Test.ApiTests
             body.Add("downloadUrl", "https://readarr.com/test.torrent");
             body.Add("publishDate", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ssZ", CultureInfo.InvariantCulture));
 
-            var request = ReleasePush.BuildRequest();
-            ClientBase.AddNewtonsoftJsonBody(request, body);
-            var result = ReleasePush.Post<ReleaseResource>(request, HttpStatusCode.OK);
+            var result = ReleasePush.SendJson<ReleaseResource>(Method.POST, ReleasePush.BuildRequest(), body, HttpStatusCode.OK);
 
             result.Should().NotBeNull();
             result.AgeHours.Should().BeApproximately(0, 0.1);

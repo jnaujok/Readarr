@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using FluentAssertions;
 using Newtonsoft.Json;
@@ -43,9 +44,7 @@ namespace NzbDrone.Integration.Test.Client
         public SimpleCommandResource PostAndWait<T>(T command)
             where T : Command, new()
         {
-            var request = BuildRequest();
-            AddNewtonsoftJsonBody(request, command);
-            var result = Post<SimpleCommandResource>(request);
+            var result = SendJson<SimpleCommandResource>(Method.POST, BuildRequest(), command, HttpStatusCode.Created);
             result.Id.Should().NotBe(0);
 
             for (var i = 0; i < 50; i++)
