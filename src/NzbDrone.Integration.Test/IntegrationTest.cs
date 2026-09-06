@@ -65,37 +65,6 @@ namespace NzbDrone.Integration.Test
             indexer.Implementation = nameof(Newznab);
             indexer.Name = "NewznabTest";
             indexer.Protocol = Core.Indexers.DownloadProtocol.Usenet;
-
-            // Change Console Log Level to Debug so we get more details.
-            var config = HostConfig.Get(1) ?? new Readarr.Api.V1.Config.HostConfigResource();
-            config.Id = 1;
-            if (config.BindAddress.IsNullOrWhiteSpace())
-            {
-                config.BindAddress = "*";
-            }
-
-            if (config.Port <= 0)
-            {
-                config.Port = Port;
-            }
-
-            if (config.Branch.IsNullOrWhiteSpace())
-            {
-                config.Branch = "develop";
-            }
-
-            if (config.BackupInterval <= 0)
-            {
-                config.BackupInterval = 7;
-            }
-
-            if (config.BackupRetention <= 0)
-            {
-                config.BackupRetention = 28;
-            }
-
-            config.ConsoleLogLevel = "Debug";
-            HostConfig.Put(config);
         }
 
         protected override void StopTestTarget()
