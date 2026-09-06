@@ -32,13 +32,13 @@ namespace NzbDrone.Host.Test
             _config.SetupGet(c => c.TrustedNetworks).Returns(string.Empty);
 
             var knownProxyCount = _options.KnownProxies.Count;
-            var knownNetworkCount = _options.KnownNetworks.Count;
+            var knownNetworkCount = _options.KnownIPNetworks.Count;
 
             ForwardedHeadersConfigurator.Configure(_options, _config.Object);
 
             _options.KnownProxies.Count.Should().Be(knownProxyCount);
-            _options.KnownNetworks.Count.Should().Be(knownNetworkCount);
-            _options.KnownNetworks.Should().NotContain(n => n.Prefix.Equals(IPAddress.Parse("10.0.0.0")));
+            _options.KnownIPNetworks.Count.Should().Be(knownNetworkCount);
+            _options.KnownIPNetworks.Should().NotContain(n => n.BaseAddress.Equals(IPAddress.Parse("10.0.0.0")));
         }
 
         [Test]
@@ -48,8 +48,8 @@ namespace NzbDrone.Host.Test
 
             ForwardedHeadersConfigurator.Configure(_options, _config.Object);
 
-            _options.KnownNetworks.Any(n => n.Prefix.Equals(IPAddress.Parse("192.168.0.0"))).Should().BeFalse();
-            _options.KnownNetworks.Any(n => n.Prefix.Equals(IPAddress.Parse("10.0.0.0"))).Should().BeFalse();
+            _options.KnownIPNetworks.Any(n => n.BaseAddress.Equals(IPAddress.Parse("192.168.0.0"))).Should().BeFalse();
+            _options.KnownIPNetworks.Any(n => n.BaseAddress.Equals(IPAddress.Parse("10.0.0.0"))).Should().BeFalse();
         }
 
         [Test]
@@ -60,8 +60,8 @@ namespace NzbDrone.Host.Test
             ForwardedHeadersConfigurator.Configure(_options, _config.Object);
 
             _options.ForwardLimit.Should().BeNull();
-            _options.KnownNetworks.Should().Contain(n => n.Prefix.Equals(IPAddress.Parse("10.0.0.0")) && n.PrefixLength == 8);
-            _options.KnownNetworks.Should().Contain(n => n.Prefix.Equals(IPAddress.Parse("192.168.50.1")) && n.PrefixLength == 32);
+            _options.KnownIPNetworks.Should().Contain(n => n.BaseAddress.Equals(IPAddress.Parse("10.0.0.0")) && n.PrefixLength == 8);
+            _options.KnownIPNetworks.Should().Contain(n => n.BaseAddress.Equals(IPAddress.Parse("192.168.50.1")) && n.PrefixLength == 32);
         }
 
         [Test]
@@ -71,8 +71,8 @@ namespace NzbDrone.Host.Test
 
             ForwardedHeadersConfigurator.Configure(_options, _config.Object);
 
-            _options.KnownNetworks.Should().Contain(n => n.Prefix.Equals(IPAddress.Parse("172.16.0.0")) && n.PrefixLength == 12);
-            _options.KnownNetworks.Should().NotContain(n => n.Prefix.ToString() == "nope");
+            _options.KnownIPNetworks.Should().Contain(n => n.BaseAddress.Equals(IPAddress.Parse("172.16.0.0")) && n.PrefixLength == 12);
+            _options.KnownIPNetworks.Should().NotContain(n => n.BaseAddress.ToString() == "nope");
         }
 
         [Test]

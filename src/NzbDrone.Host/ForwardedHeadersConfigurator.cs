@@ -16,7 +16,7 @@ namespace NzbDrone.Host
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
 
-            // Keep ASP.NET defaults (loopback). Do not Clear() KnownNetworks/KnownProxies —
+            // Keep ASP.NET defaults (loopback). Do not Clear() KnownIPNetworks/KnownProxies —
             // that trusts X-Forwarded-* from any client and allows auth bypass.
             var trustedNetworks = configFileProvider.TrustedNetworks;
 
@@ -36,7 +36,7 @@ namespace NzbDrone.Host
 
                 if (IPNetworkParser.TryParse(entry, out var address, out var prefixLength))
                 {
-                    options.KnownNetworks.Add(new IPNetwork(address, prefixLength));
+                    options.KnownIPNetworks.Add(new System.Net.IPNetwork(address, prefixLength));
 
                     Logger.Info("Trusting forwarded headers from {0}/{1}", address, prefixLength);
                 }

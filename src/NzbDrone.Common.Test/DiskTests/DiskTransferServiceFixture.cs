@@ -66,6 +66,8 @@ namespace NzbDrone.Common.Test.DiskTests
         [Test]
         public void should_throw_if_different_casing_unless_moving()
         {
+            WindowsOnly();
+
             var targetPath = Path.Combine(Path.GetDirectoryName(_sourcePath), Path.GetFileName(_sourcePath).ToUpper());
 
             Assert.Throws<IOException>(() => Subject.TransferFile(_sourcePath, targetPath, TransferMode.HardLink));
@@ -74,6 +76,8 @@ namespace NzbDrone.Common.Test.DiskTests
         [Test]
         public void should_rename_via_temp_if_different_casing()
         {
+            WindowsOnly();
+
             var backupPath = _sourcePath + ".backup~";
             var targetPath = Path.Combine(Path.GetDirectoryName(_sourcePath), Path.GetFileName(_sourcePath).ToUpper());
 
@@ -102,6 +106,8 @@ namespace NzbDrone.Common.Test.DiskTests
         [Test]
         public void should_rollback_rename_via_temp_on_exception()
         {
+            WindowsOnly();
+
             var backupPath = _sourcePath + ".backup~";
             var targetPath = Path.Combine(Path.GetDirectoryName(_sourcePath), Path.GetFileName(_sourcePath).ToUpper());
 
@@ -126,6 +132,8 @@ namespace NzbDrone.Common.Test.DiskTests
         [Test]
         public void should_log_error_if_rollback_move_fails()
         {
+            WindowsOnly();
+
             var backupPath = _sourcePath + ".backup~";
             var targetPath = Path.Combine(Path.GetDirectoryName(_sourcePath), Path.GetFileName(_sourcePath).ToUpper());
 
@@ -148,6 +156,34 @@ namespace NzbDrone.Common.Test.DiskTests
             Assert.Throws<IOException>(() => Subject.TransferFile(_sourcePath, targetPath, TransferMode.Move));
 
             ExceptionVerification.ExpectedErrors(1);
+        }
+
+        [Test]
+        public void should_move_directly_when_casing_differs_on_posix()
+        {
+            PosixOnly();
+
+            var targetPath = Path.Combine(Path.GetDirectoryName(_sourcePath), Path.GetFileName(_sourcePath).ToUpper());
+
+            Subject.TransferFile(_sourcePath, targetPath, TransferMode.Move);
+
+            Mocker.GetMock<IDiskProvider>()
+                .Verify(v => v.MoveFile(_sourcePath, targetPath, false), Times.Once());
+            Mocker.GetMock<IDiskProvider>()
+                .Verify(v => v.MoveFile(_sourcePath, _sourcePath + ".backup~", true), Times.Never());
+        }
+
+        [Test]
+        public void should_hardlink_when_casing_differs_on_posix()
+        {
+            PosixOnly();
+
+            var targetPath = Path.Combine(Path.GetDirectoryName(_sourcePath), Path.GetFileName(_sourcePath).ToUpper());
+            WithSuccessfulHardlink(_sourcePath, targetPath);
+
+            var result = Subject.TransferFile(_sourcePath, targetPath, TransferMode.HardLink);
+
+            result.Should().HaveFlag(TransferMode.HardLink);
         }
 
         [Test]

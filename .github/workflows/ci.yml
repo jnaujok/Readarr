@@ -7,9 +7,9 @@
 # Coverlet ≥80% line gate (Ash), Semgrep + Trivy, linux-x64 package, and a
 # multi-stage Docker image published to GHCR.
 #
-# .NET version: coordinated with Ash. This tree is net8.0 (global.json
-# 8.0.411). Do not use sdk:10.0 until the TFM moves. Azure Pipelines still
-# uses 8.0.x and is not replaced by this workflow.
+# .NET version: coordinated with Ash. This tree is net10.0 (global.json
+# 10.0.400). Azure Pipelines uses the same 10.0.x SDK band and is not
+# replaced by this workflow.
 #
 # Local mirrors of the critical stages are listed in the workflow comments
 # at the bottom of this file.
@@ -41,8 +41,8 @@ env:
   DOTNET_NOLOGO: "true"
   NUGET_XMLDOC_MODE: skip
   FORCE_COLOR: "0"
-  # Pin matches global.json (Ash). TFM is net8.0, not net10.
-  DOTNET_VERSION: "8.0.411"
+  # Pin matches global.json (Ash). TFM is net10.0, not net10.
+  DOTNET_VERSION: "10.0.400"
   NODE_VERSION: "20.11.1"
   YARN_VERSION: "1.22.19"
   READARRVERSION: "0.4.19.${{ github.run_number }}"
@@ -119,11 +119,11 @@ jobs:
       - name: Build and publish linux-x64
         run: |
           chmod +x build.sh
-          ./build.sh --backend -r linux-x64 -f net8.0
+          ./build.sh --backend -r linux-x64 -f net10.0
 
       - name: Unit tests with Coverlet
         env:
-          TEST_PUBLISH: _tests/net8.0/linux-x64/publish
+          TEST_PUBLISH: _tests/net10.0/linux-x64/publish
         run: |
           set -euo pipefail
           chmod a+x "${TEST_PUBLISH}/Readarr.Test.Dummy" || true
@@ -196,7 +196,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-x64-tests
-          path: _tests/net8.0/linux-x64/publish
+          path: _tests/net10.0/linux-x64/publish
           if-no-files-found: error
           retention-days: 7
 
@@ -281,12 +281,12 @@ jobs:
       - name: Assemble package
         run: |
           chmod +x build.sh
-          ./build.sh --packages -r linux-x64 -f net8.0
+          ./build.sh --packages -r linux-x64 -f net10.0
           find _artifacts -name Readarr -exec chmod a+x {} \;
           find _artifacts -name Readarr.Update -exec chmod a+x {} \;
           mkdir -p dist
           tar -czf "dist/Readarr.${READARRVERSION}.linux-core-x64.tar.gz" \
-            -C _artifacts/linux-x64/net8.0 Readarr
+            -C _artifacts/linux-x64/net10.0 Readarr
 
       - name: Upload linux-x64 tarball
         uses: actions/upload-artifact@v4
@@ -455,7 +455,7 @@ jobs:
           echo "Scanning ${{ needs.docker.outputs.tag }}"
 
       # First-land baseline: keep the scan visible. Tighten exit-code after the
-      # aspnet:8.0 image is clean of unfixed HIGH/CRITICAL findings.
+      # aspnet:10.0 image is clean of unfixed HIGH/CRITICAL findings.
       - name: Trivy image scan
         continue-on-error: true
         uses: aquasecurity/trivy-action@v0.36.0
@@ -507,7 +507,7 @@ jobs:
 # Local reproduction (Linux x86_64):
 #   export READARRVERSION=0.4.19.0 BUILD_SOURCEBRANCHNAME=develop
 #   yarn install --frozen-lockfile && yarn lint && yarn stylelint-linux && yarn run build --env production
-#   ./build.sh --backend --packages -r linux-x64 -f net8.0
-#   dotnet test _tests/net8.0/linux-x64/publish/Readarr.Core.Test.dll --settings src/coverlet.ci.runsettings --collect "XPlat Code Coverage"
+#   ./build.sh --backend --packages -r linux-x64 -f net10.0
+#   dotnet test _tests/net10.0/linux-x64/publish/Readarr.Core.Test.dll --settings src/coverlet.ci.runsettings --collect "XPlat Code Coverage"
 #   docker build --build-arg READARRVERSION=$READARRVERSION --build-arg BRANCH=develop -t readarr:local .
 #   docker run --rm -p 8787:8787 -v readarr-config:/config readarr:local
