@@ -19,16 +19,29 @@
     <main id="content">
       <p class="breadcrumb"><a href="../index.html">User guide</a> / Getting started</p>
       <h1>Start here</h1>
-      <p>Use this page after you have a Readarr process running. The default web UI is on port 8787 unless you changed it.</p>
+      <p>The default HTTP port is <strong>8787</strong>. Some deployments map a second instance to another port (this capture used 8788). Open the URL in a browser.</p>
 
-      <h2>First-run jobs</h2>
+      <h2>First start: Authentication Required</h2>
+      <p>On a new instance the library loads, then a modal titled <strong>Authentication Required</strong> blocks the rest of the UI until you save a method.</p>
+      <figure>
+        <img src="../assets/authors.png" alt="Authors page with Authentication Required modal, warning text, Authentication Method None, Authentication Required Enabled, Username, Password, Password Confirmation, Save">
+        <figcaption>First start on Authors. The sidebar is already visible behind the modal.</figcaption>
+      </figure>
       <ol class="steps">
-        <li>Open Readarr in a browser.</li>
-        <li>Set authentication under <strong>Settings</strong> → <strong>General</strong> if the instance is reachable from other machines.</li>
-        <li>Confirm the metadata URL under <strong>Settings</strong> → <strong>Development</strong>. Leave it blank to use rreading-glasses at <code>https://api.bookinfo.pro</code>.</li>
-        <li>Add a root folder under <strong>Settings</strong> → <strong>Media Management</strong>.</li>
-        <li>Review <strong>Settings</strong> → <strong>Profiles</strong>. Choose whether each quality profile should collect ebooks, PDFs, and audiobooks independently. See <a href="../library/wanted-formats.html">Wanted formats</a>.</li>
-        <li>Add indexers and download clients under <strong>Settings</strong>.</li>
+        <li>Read the warning: “To prevent remote access without authentication, Readarr now requires authentication to be enabled. You can optionally disable authentication from local addresses.”</li>
+        <li>Set <strong>Authentication Method</strong> to something other than <strong>None</strong>. With <strong>None</strong> selected the form shows <strong>Please select a valid authentication method</strong>.</li>
+        <li>Leave <strong>Authentication Required</strong> as <strong>Enabled</strong> unless you understand the risk stated on the form: “Change which requests authentication is required for. Do not change unless you understand the risks.”</li>
+        <li>Enter <strong>Username</strong>, <strong>Password</strong>, and <strong>Password Confirmation</strong>.</li>
+        <li>Choose <strong>Save</strong>.</li>
+      </ol>
+      <p>After that, later visits use the <a href="sign-in.html">login</a> page.</p>
+
+      <h2>Then finish setup</h2>
+      <ol class="steps">
+        <li>Confirm the metadata URL: open <strong>Settings</strong> (the hub page), then <strong>Development</strong>. Leave <strong>Metadata Source</strong> blank for rreading-glasses. See <a href="metadata.html">Metadata source</a>.</li>
+        <li>Add a root folder under <strong>Settings</strong> → <strong>Media Management</strong> (fieldset <strong>Root Folders</strong>).</li>
+        <li>Review <strong>Settings</strong> → <strong>Profiles</strong>. Default cards on a fresh instance are <strong>eBook</strong> (MOBI, EPUB, AZW3) and <strong>Spoken</strong>. Set <strong>Wanted Formats</strong> if you want independent ebook, PDF, and audiobook copies. See <a href="../library/wanted-formats.html">Wanted formats</a>.</li>
+        <li>Add indexers and download clients from the Settings hub.</li>
         <li>Add authors from <strong>Library</strong> → <strong>Add New</strong>.</li>
       </ol>
 
@@ -40,9 +53,9 @@ dotnet build src/Readarr.sln -c Release</code></pre>
 
       <div class="pager">
         <a href="../index.html">← Home</a>
-        <a href="metadata.html">Next: Metadata source →</a>
+        <a href="sign-in.html">Next: Sign in →</a>
       </div>
-      <footer class="page-foot">Last updated 6 September 2026.</footer>
+      <footer class="page-foot">Captured 6 September 2026 from Readarr 0.4.19.51 (develop).</footer>
     </main>
   </div>
   <script src="../nav.js"></script>

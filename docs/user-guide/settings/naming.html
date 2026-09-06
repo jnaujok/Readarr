@@ -19,12 +19,20 @@
     <main id="content">
       <p class="breadcrumb"><a href="../index.html">User guide</a> / <a href="index.html">Settings</a> / File naming</p>
       <h1>File naming</h1>
-      <p>Open <strong>Settings</strong> → <strong>Media Management</strong> and edit the naming format. The naming token picker includes the tokens below (examples are from the picker).</p>
+      <p>Open <strong>Settings</strong> → <strong>Media Management</strong>. The naming block on that page is titled <strong>Book Naming</strong>.</p>
+      <figure>
+        <img src="../assets/settings-mediamanagement.png" alt="Media Management with Root Folders, Remote Path Mappings, Book Naming, File Management">
+        <figcaption>Media Management sections: Root Folders, Remote Path Mappings, Book Naming, File Management. Toolbar: Show Advanced.</figcaption>
+      </figure>
+      <p>A fresh instance has renaming off. The stored standard book format is:</p>
+      <pre><code>{Book Title}/{Author Name} - {Book Title}{ (PartNumber)}</code></pre>
+      <p>Author folder format is <code>{Author Name}</code>.</p>
 
       <h2>Fallbacks</h2>
-      <p>Any token can take a fallback after a pipe. If the token is empty, Readarr uses the fallback text. Example from the picker: <code>{Book Series|Standalone}</code> → <code>Standalone</code> when the book is not in a series.</p>
+      <p>Any token can take a fallback after a pipe. If the token is empty, Readarr uses the fallback text. Example from the naming token picker: <code>{Book Series|Standalone}</code> → <code>Standalone</code> when the book is not in a series.</p>
 
-      <h2>Book tokens added in this rewrite</h2>
+      <h2>Tokens added in this rewrite</h2>
+      <p>These appear in the naming token picker:</p>
       <table>
         <thead><tr><th>Token</th><th>Picker example</th></tr></thead>
         <tbody>
@@ -42,7 +50,7 @@
         <a href="quality-profiles.html">← Quality profiles</a>
         <a href="media-management.html">Next: Media management →</a>
       </div>
-      <footer class="page-foot">Last updated 6 September 2026.</footer>
+      <footer class="page-foot">Captured 6 September 2026 from Readarr 0.4.19.51 (develop).</footer>
     </main>
   </div>
   <script src="../nav.js"></script>

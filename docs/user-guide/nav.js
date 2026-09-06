@@ -3,6 +3,7 @@
     { href: "index.html", label: "Home" },
     { section: "Getting started" },
     { href: "getting-started/index.html", label: "Start here" },
+    { href: "getting-started/sign-in.html", label: "Sign in" },
     { href: "getting-started/metadata.html", label: "Metadata source" },
     { section: "Library" },
     { href: "library/index.html", label: "Library overview" },

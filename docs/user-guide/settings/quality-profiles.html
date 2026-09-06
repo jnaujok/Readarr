@@ -19,21 +19,24 @@
     <main id="content">
       <p class="breadcrumb"><a href="../index.html">User guide</a> / <a href="index.html">Settings</a> / Quality profiles</p>
       <h1>Quality profiles</h1>
-      <p>Open <strong>Settings</strong> → <strong>Profiles</strong>. Each profile has a name, allowed qualities, optional upgrades, and <strong>Wanted Formats</strong>.</p>
+      <p>Open <strong>Settings</strong> → <strong>Profiles</strong>. The heading is <strong>Quality Profiles</strong>. A fresh instance shows an <strong>eBook</strong> card (MOBI, EPUB, AZW3) and a <strong>Spoken</strong> profile for audio. The same page also has <strong>Metadata Profiles</strong>, <strong>Delay Profiles</strong>, and <strong>Release Profiles</strong>.</p>
+      <figure>
+        <img src="../assets/settings-profiles.png" alt="Quality Profiles with eBook card listing MOBI EPUB AZW3">
+        <figcaption>Settings → Profiles. Open a quality profile card to edit Name, allowed qualities, Upgrades Allowed, and Wanted Formats.</figcaption>
+      </figure>
       <ol class="steps">
         <li>Set <strong>Name</strong>.</li>
         <li>Enable the qualities Readarr may grab (EPUB, AZW3, PDF, MP3, and so on).</li>
-        <li>Set <strong>Upgrades Allowed</strong> if Readarr should replace a lower quality with a higher one in the same format kind. Help text: “If disabled qualities will not be upgraded.”</li>
-        <li>If upgrades are on, set <strong>Upgrade Until</strong>. Help text: “Once this quality is reached Readarr will no longer download books.” That cutoff applies inside a format kind, not across ebook versus audiobook.</li>
+        <li>Set <strong>Upgrades Allowed</strong> if Readarr should replace a lower quality with a higher one in the same format kind. Help text: “If disabled qualities will not be upgraded.” Default profiles on this capture have upgrades off.</li>
+        <li>If upgrades are on, set the cutoff. Help text: “Once this quality is reached Readarr will no longer download books.” That cutoff applies inside a format kind, not across ebook versus audiobook.</li>
         <li>Set <strong>Wanted Formats</strong> as described in <a href="../library/wanted-formats.html">Wanted formats</a>.</li>
       </ol>
-      <p>The profile card lists selected wanted formats as labels: <strong>Ebooks (EPUB, AZW3, MOBI)</strong>, <strong>PDFs</strong>, <strong>Audiobooks</strong>.</p>
-      <p>New default profiles created on a first run select matching wanted formats (ebook profile wants ebooks; spoken profile wants audiobooks). Existing profiles stay on the old any-file behaviour until you check boxes.</p>
+      <p>When you check wanted formats, the profile card lists them as <strong>Ebooks (EPUB, AZW3, MOBI)</strong>, <strong>PDFs</strong>, and/or <strong>Audiobooks</strong>. Until you check those boxes, any allowed file still completes the book.</p>
       <div class="pager">
         <a href="index.html">← Settings</a>
         <a href="naming.html">Next: File naming →</a>
       </div>
-      <footer class="page-foot">Last updated 6 September 2026.</footer>
+      <footer class="page-foot">Captured 6 September 2026 from Readarr 0.4.19.51 (develop).</footer>
     </main>
   </div>
   <script src="../nav.js"></script>
