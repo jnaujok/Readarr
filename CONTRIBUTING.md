@@ -2,12 +2,22 @@
 
 We're always looking for people to help make Readarr even better, there are a number of ways to contribute.
 
-This file has been moved to the wiki for the latest details please see the [contributing wiki page](https://wiki.servarr.com/readarr/contributing).
-
 ## Documentation
 
-Setup guides, [FAQ](https://wiki.servarr.com/readarr/faq), the more information we have on the [wiki](https://wiki.servarr.com/readarr) the better.
+Operator documentation for this fork is the HTML user guide in [`docs/user-guide/index.html`](docs/user-guide/index.html). Open that file in a browser; it does not need a build step.
+
+The historical Servarr wiki remains at [wiki.servarr.com/readarr](https://wiki.servarr.com/readarr) for upstream *arr patterns (indexers, download clients). Prefer the local guide for metadata, wanted formats, naming tokens, and other behaviour that changed in this rewrite.
 
 ## Development
 
-See the [Wiki Page](https://wiki.servarr.com/readarr/contributing)
+- Solution: `src/Readarr.sln`
+- Default branch: `develop`
+- Unit tests: `src/NzbDrone.Core.Test`
+- House style: `NzbDrone.*` namespaces, NUnit, FluentAssertions, Moq, Newtonsoft.Json, DryIoc, StyleCop
+- Coverage gate for new slices: Coverlet ≥ 80%
+
+```bash
+export PATH="$HOME/.dotnet:$PATH"
+dotnet build src/Readarr.sln -c Release
+dotnet test src/NzbDrone.Core.Test/NzbDrone.Core.Test.csproj -c Release --filter "FullyQualifiedName!~Integration"
+```

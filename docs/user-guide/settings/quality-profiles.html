@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quality profiles — Readarr user guide</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-page="settings/quality-profiles.html">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="app-header">
+    <img src="../assets/readarr-mark.png" alt="">
+    <a href="../index.html">Readarr</a>
+    <span class="tag">User guide</span>
+    <button class="nav-toggle" id="nav-toggle" type="button">Menu</button>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="guide-nav" aria-label="Guide"></nav>
+    <main id="content">
+      <p class="breadcrumb"><a href="../index.html">User guide</a> / <a href="index.html">Settings</a> / Quality profiles</p>
+      <h1>Quality profiles</h1>
+      <p>Open <strong>Settings</strong> → <strong>Profiles</strong>. Each profile has a name, allowed qualities, optional upgrades, and <strong>Wanted Formats</strong>.</p>
+      <ol class="steps">
+        <li>Set <strong>Name</strong>.</li>
+        <li>Enable the qualities Readarr may grab (EPUB, AZW3, PDF, MP3, and so on).</li>
+        <li>Set <strong>Upgrades Allowed</strong> if Readarr should replace a lower quality with a higher one in the same format kind. Help text: “If disabled qualities will not be upgraded.”</li>
+        <li>If upgrades are on, set <strong>Upgrade Until</strong>. Help text: “Once this quality is reached Readarr will no longer download books.” That cutoff applies inside a format kind, not across ebook versus audiobook.</li>
+        <li>Set <strong>Wanted Formats</strong> as described in <a href="../library/wanted-formats.html">Wanted formats</a>.</li>
+      </ol>
+      <p>The profile card lists selected wanted formats as labels: <strong>Ebooks (EPUB, AZW3, MOBI)</strong>, <strong>PDFs</strong>, <strong>Audiobooks</strong>.</p>
+      <p>New default profiles created on a first run select matching wanted formats (ebook profile wants ebooks; spoken profile wants audiobooks). Existing profiles stay on the old any-file behaviour until you check boxes.</p>
+      <div class="pager">
+        <a href="index.html">← Settings</a>
+        <a href="naming.html">Next: File naming →</a>
+      </div>
+      <footer class="page-foot">Last updated 6 September 2026.</footer>
+    </main>
+  </div>
+  <script src="../nav.js"></script>
+</body>
+</html>
