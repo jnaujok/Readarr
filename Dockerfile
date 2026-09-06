@@ -4,7 +4,8 @@
 # Run:   docker run --rm -p 8787:8787 -v readarr-config:/config readarr:local
 
 ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
-ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble
+# .NET 10 does not publish Debian bookworm-slim images. The 10.0 tag is Ubuntu.
+ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0
 ARG NODE_IMAGE=node:20.11.1-bookworm
 
 # -----------------------------------------------------------------------------
