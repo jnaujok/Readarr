@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,7 @@ using Readarr.Http.ClientSchema;
 using Readarr.Http.ErrorManagement;
 using Readarr.Http.Frontend;
 using Readarr.Http.Middleware;
+using Readarr.Http.REST;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace NzbDrone.Host
@@ -77,10 +79,18 @@ namespace NzbDrone.Host
                     .AllowAnyHeader());
             });
 
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                // DryIoc can construct concrete DTOs, so ASP.NET would infer [FromServices]
+                // and ignore JSON bodies. Keep REST resources bound from the request body.
+                options.DisableImplicitFromServicesParameters = true;
+            });
+
             services
             .AddControllers(options =>
             {
                 options.ReturnHttpNotAcceptable = true;
+                options.Conventions.Add(new RestResourceFromBodyConvention());
             })
             .AddApplicationPart(typeof(SystemController).Assembly)
             .AddApplicationPart(typeof(StaticResourceController).Assembly)
