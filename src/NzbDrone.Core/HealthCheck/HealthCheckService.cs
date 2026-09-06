@@ -33,6 +33,7 @@ namespace NzbDrone.Core.HealthCheck
         private readonly Logger _logger;
 
         private readonly ICached<HealthCheck> _healthCheckResults;
+        private readonly HealthCheckCooldown _eventDrivenCooldown = new HealthCheckCooldown(TimeSpan.FromSeconds(15));
 
         private bool _hasRunHealthChecksAfterGracePeriod = false;
         private bool _isRunningHealthChecksAfterGracePeriod = false;
@@ -184,7 +185,16 @@ namespace NzbDrone.Core.HealthCheck
                 }
             }
 
-            // TODO: Add debounce
+            if (!filteredChecks.Any())
+            {
+                return;
+            }
+
+            if (!_eventDrivenCooldown.TryEnter(DateTime.UtcNow))
+            {
+                return;
+            }
+
             PerformHealthCheck(filteredChecks.ToArray(), message);
         }
     }

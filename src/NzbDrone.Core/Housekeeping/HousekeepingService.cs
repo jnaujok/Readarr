@@ -11,6 +11,7 @@ namespace NzbDrone.Core.Housekeeping
         private readonly IEnumerable<IHousekeepingTask> _housekeepers;
         private readonly Logger _logger;
         private readonly IMainDatabase _mainDb;
+        private DateTime? _lastVacuumUtc;
 
         public HousekeepingService(IEnumerable<IHousekeepingTask> housekeepers, IMainDatabase mainDb, Logger logger)
         {
@@ -37,9 +38,13 @@ namespace NzbDrone.Core.Housekeeping
                 }
             }
 
-            // Vacuuming the log db isn't needed since that's done in a separate housekeeping task
-            _logger.Debug("Compressing main database after housekeeping");
-            _mainDb.Vacuum();
+            var now = DateTime.UtcNow;
+            if (HousekeepingVacuumPolicy.ShouldVacuum(_mainDb.DatabaseType, _lastVacuumUtc, now))
+            {
+                _logger.Debug("Compressing main database after housekeeping");
+                _mainDb.Vacuum();
+                _lastVacuumUtc = now;
+            }
         }
 
         public void Execute(HousekeepingCommand message)

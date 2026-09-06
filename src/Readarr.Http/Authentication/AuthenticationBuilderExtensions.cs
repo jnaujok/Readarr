@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Diacritical;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using NzbDrone.Core.Authentication;
 using NzbDrone.Core.Configuration;
@@ -44,6 +45,13 @@ namespace Readarr.Http.Authentication
                     instanceName = CookieNameRegex.Replace(instanceName, string.Empty);
 
                     options.Cookie.Name = $"{instanceName}Auth";
+                    options.Cookie.SameSite = SameSiteMode.Strict;
+                    options.Cookie.HttpOnly = true;
+                    if (configFileProvider.EnableSsl)
+                    {
+                        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    }
+
                     options.AccessDeniedPath = "/login?loginFailed=true";
                     options.LoginPath = "/login";
                     options.ExpireTimeSpan = TimeSpan.FromDays(7);

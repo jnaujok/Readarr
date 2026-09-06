@@ -376,6 +376,11 @@ namespace NzbDrone.Core.MediaFiles.BookImport
                     var path = decisions.First().Item.Path;
                     var rootFolder = _rootFolderService.GetBestRootFolder(path);
 
+                    if (rootFolder == null)
+                    {
+                        throw new RootFolderNotFoundException($"Unable to add author, path '{path}' is not under a configured root folder.");
+                    }
+
                     author.RootFolderPath = rootFolder.Path;
                     author.MetadataProfileId = rootFolder.DefaultMetadataProfileId;
                     author.QualityProfileId = rootFolder.DefaultQualityProfileId;

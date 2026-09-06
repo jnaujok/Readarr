@@ -106,7 +106,7 @@ namespace NzbDrone.Core.MediaFiles
         private void DeleteFile(BookFile bookFile, string subfolder = "")
         {
             var rootFolder = _rootFolderService.GetBestRootFolder(bookFile.Path);
-            var isCalibre = rootFolder.IsCalibreLibrary && rootFolder.CalibreSettings != null;
+            var isCalibre = rootFolder != null && rootFolder.IsCalibreLibrary && rootFolder.CalibreSettings != null;
 
             try
             {

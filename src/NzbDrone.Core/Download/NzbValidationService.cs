@@ -15,8 +15,7 @@ namespace NzbDrone.Core.Download
     {
         public void Validate(string filename, byte[] fileContent)
         {
-            var reader = new StreamReader(new MemoryStream(fileContent));
-
+            using var reader = new StreamReader(new MemoryStream(fileContent));
             using (var xmlTextReader = XmlReader.Create(reader, new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore, IgnoreComments = true }))
             {
                 var xDoc = XDocument.Load(xmlTextReader);

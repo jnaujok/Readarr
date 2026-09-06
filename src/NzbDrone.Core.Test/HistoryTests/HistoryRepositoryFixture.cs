@@ -47,5 +47,20 @@ namespace NzbDrone.Core.Test.HistoryTests
 
             downloadHistory.Should().HaveCount(1);
         }
+
+        [Test]
+        public void find_by_download_id_includes_rows_without_book()
+        {
+            var history = Builder<EntityHistory>.CreateNew()
+                .With(c => c.Quality = new QualityModel())
+                .With(c => c.BookId = 0)
+                .With(c => c.AuthorId = 0)
+                .With(c => c.DownloadId = "grab-without-book")
+                .BuildNew();
+
+            Subject.Insert(history);
+
+            Subject.FindByDownloadId("grab-without-book").Should().HaveCount(1);
+        }
     }
 }

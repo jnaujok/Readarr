@@ -6,6 +6,7 @@ using FizzWare.NBuilder;
 using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Common.Extensions;
+using NzbDrone.Core.Books.Commands;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.MediaFiles.BookImport.Manual;
@@ -122,6 +123,15 @@ namespace NzbDrone.Core.Test.Messaging.Commands
                 .ToList();
             var command1 = new ManualImportCommand { Files = files1 };
             var command2 = new ManualImportCommand { Files = files2 };
+            CommandEqualityComparer.Instance.Equals(command1, command2).Should().BeFalse();
+        }
+
+        [Test]
+        public void should_return_false_when_early_properties_are_both_null_but_later_differ()
+        {
+            var command1 = new RefreshAuthorCommand(null, true);
+            var command2 = new RefreshAuthorCommand(null, false);
+
             CommandEqualityComparer.Instance.Equals(command1, command2).Should().BeFalse();
         }
     }

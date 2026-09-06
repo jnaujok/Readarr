@@ -41,8 +41,8 @@ namespace NzbDrone.Core.History
         {
             return _database.QueryJoined<EntityHistory, Author, Book>(
                 Builder()
-                .Join<EntityHistory, Author>((h, a) => h.AuthorId == a.Id)
-                .Join<EntityHistory, Book>((h, a) => h.BookId == a.Id)
+                .LeftJoin<EntityHistory, Author>((h, a) => h.AuthorId == a.Id)
+                .LeftJoin<EntityHistory, Book>((h, a) => h.BookId == a.Id)
                 .Where<EntityHistory>(h => h.DownloadId == downloadId),
                 (history, author, book) =>
                 {

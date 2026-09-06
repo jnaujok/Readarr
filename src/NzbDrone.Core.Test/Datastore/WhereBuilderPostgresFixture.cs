@@ -164,6 +164,15 @@ namespace NzbDrone.Core.Test.Datastore
         }
 
         [Test]
+        public void postgres_where_in_empty_list_is_false()
+        {
+            var list = new List<int>();
+            _subject = Where(x => list.Contains(x.Id));
+
+            _subject.ToString().Should().Be("(0 = 1)");
+        }
+
+        [Test]
         public void postgres_where_in_list_2()
         {
             var list = new List<int> { 1, 2, 3 };

@@ -86,6 +86,7 @@ namespace Readarr.Http.Authentication
         }
 
         [HttpGet("logout")]
+        [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             _authService.Logout(HttpContext);

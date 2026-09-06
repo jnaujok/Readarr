@@ -254,16 +254,17 @@ namespace NzbDrone.Core.MediaFiles
 
         private void SetLastWriteTime(string file, DateTime dateTime)
         {
-            // Swallow any IOException that may be thrown due to "Invalid parameter"
             try
             {
                 _diskProvider.FileSetLastWriteTime(file, dateTime);
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                _logger.Debug(ex, "Unable to set last write time on recycled file {0}", file);
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                _logger.Debug(ex, "Unable to set last write time on recycled file {0}", file);
             }
         }
 

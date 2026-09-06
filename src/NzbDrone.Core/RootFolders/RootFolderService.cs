@@ -178,15 +178,28 @@ namespace NzbDrone.Core.RootFolders
 
         private void GetDetails(RootFolder rootFolder)
         {
-            Task.Run(() =>
+            var accessible = false;
+            long? freeSpace = null;
+            long? totalSpace = null;
+
+            var completed = Task.Run(() =>
             {
                 if (_diskProvider.FolderExists(rootFolder.Path))
                 {
-                    rootFolder.Accessible = true;
-                    rootFolder.FreeSpace = _diskProvider.GetAvailableSpace(rootFolder.Path);
-                    rootFolder.TotalSpace = _diskProvider.GetTotalSize(rootFolder.Path);
+                    accessible = true;
+                    freeSpace = _diskProvider.GetAvailableSpace(rootFolder.Path);
+                    totalSpace = _diskProvider.GetTotalSize(rootFolder.Path);
                 }
             }).Wait(5000);
+
+            if (!completed)
+            {
+                return;
+            }
+
+            rootFolder.Accessible = accessible;
+            rootFolder.FreeSpace = freeSpace;
+            rootFolder.TotalSpace = totalSpace;
         }
 
         public void Handle(ModelEvent<RemotePathMapping> message)

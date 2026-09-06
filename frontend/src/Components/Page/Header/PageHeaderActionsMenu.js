@@ -14,7 +14,8 @@ function PageHeaderActionsMenu(props) {
     formsAuth,
     onKeyboardShortcutsPress,
     onRestartPress,
-    onShutdownPress
+    onShutdownPress,
+    onLogoutPress
   } = props;
 
   return (
@@ -62,8 +63,7 @@ function PageHeaderActionsMenu(props) {
           {
             formsAuth &&
               <MenuItem
-                to={`${window.Readarr.urlBase}/logout`}
-                noRouter={true}
+                onPress={onLogoutPress}
               >
                 <Icon
                   className={styles.itemIcon}
@@ -82,7 +82,8 @@ PageHeaderActionsMenu.propTypes = {
   formsAuth: PropTypes.bool.isRequired,
   onKeyboardShortcutsPress: PropTypes.func.isRequired,
   onRestartPress: PropTypes.func.isRequired,
-  onShutdownPress: PropTypes.func.isRequired
+  onShutdownPress: PropTypes.func.isRequired,
+  onLogoutPress: PropTypes.func
 };
 
 export default PageHeaderActionsMenu;

@@ -307,27 +307,30 @@ namespace NzbDrone.Core.Datastore
                 item = body.Arguments[1];
             }
 
-            _sb.Append('(');
-
-            Visit(item);
-
-            _sb.Append(" = ANY (");
-
-            // hardcode the integer list if it exists to bypass parameter limit
             if (item.Type == typeof(int) && TryGetRightValue(list, out var value))
             {
-                var items = (IEnumerable<int>)value;
-                _sb.Append("('{");
-                _sb.Append(string.Join(", ", items));
-                _sb.Append("}')");
-
+                var items = ((IEnumerable<int>)value).ToArray();
                 _gotConcreteValue = true;
-            }
-            else
-            {
-                Visit(list);
+
+                if (items.Length == 0)
+                {
+                    _sb.Append("(0 = 1)");
+                    return;
+                }
+
+                _sb.Append('(');
+                Visit(item);
+                _sb.Append(" = ANY (('{");
+                _sb.Append(string.Join(", ", items));
+                _sb.Append("}'))");
+                _sb.Append(')');
+                return;
             }
 
+            _sb.Append('(');
+            Visit(item);
+            _sb.Append(" = ANY (");
+            Visit(list);
             _sb.Append("))");
         }
 

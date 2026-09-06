@@ -106,5 +106,22 @@ namespace NzbDrone.Core.Test.Housekeeping.Housekeepers
             AllStoredModels.Should().HaveCount(1);
             AllStoredModels.Should().Contain(h => h.BookId == _book.Id);
         }
+
+        [Test]
+        public void should_not_delete_history_with_book_id_zero()
+        {
+            GivenAuthor();
+
+            var history = Builder<EntityHistory>.CreateNew()
+                .With(h => h.Quality = new QualityModel())
+                .With(h => h.AuthorId = _author.Id)
+                .With(h => h.BookId = 0)
+                .BuildNew();
+
+            Db.Insert(history);
+
+            Subject.Clean();
+            AllStoredModels.Should().HaveCount(1);
+        }
     }
 }
