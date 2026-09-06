@@ -10,6 +10,7 @@ using NLog.Config;
 using NLog.Targets;
 using NUnit.Framework;
 using NzbDrone.Common.EnvironmentInfo;
+using NzbDrone.Common.Serializer;
 using NzbDrone.Core.MediaFiles.BookImport.Manual;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Integration.Test.Client;
@@ -98,7 +99,7 @@ namespace NzbDrone.Integration.Test
             RestClient = new RestClient(RootUrl + "api/v1/");
             RestClient.AddDefaultHeader("Authentication", ApiKey);
             RestClient.AddDefaultHeader("X-Api-Key", ApiKey);
-            RestClient.UseSystemTextJson();
+            RestClient.UseSystemTextJson(STJson.GetSerializerSettings());
 
             Blocklist = new ClientBase<BlocklistResource>(RestClient, ApiKey);
             Commands = new CommandClient(RestClient, ApiKey);
