@@ -58,6 +58,7 @@
   "AuthBasic": "Basic (Browser Popup)",
   "AuthForm": "Forms (Login Page)",
   "Authentication": "Authentication",
+  "AuthenticationDisabledHealthCheckMessage": "Authentication is disabled. Enable Forms, Basic, or External authentication before exposing Readarr on a network.",
   "AuthenticationMethod": "Authentication Method",
   "AuthenticationMethodHelpText": "Require Username and Password to access {appName}",
   "AuthenticationMethodHelpTextWarning": "Please select a valid authentication method",

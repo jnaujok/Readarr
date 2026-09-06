@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using FizzWare.NBuilder;
 using FluentAssertions;
 using NUnit.Framework;
@@ -217,6 +219,46 @@ namespace NzbDrone.Core.Test.Messaging.Commands
             Subject.TryGet(out var command);
 
             command.Should().BeNull();
+        }
+
+        [Test]
+        public void all_returns_a_copy()
+        {
+            GivenStartedDiskCommand();
+
+            var snapshot = Subject.All();
+            snapshot.Should().HaveCount(1);
+
+            GivenLongRunningCommand();
+
+            snapshot.Should().HaveCount(1);
+            Subject.All().Should().HaveCount(2);
+        }
+
+        [Test]
+        public void consuming_enumerable_stops_when_canceled()
+        {
+            using var cts = new CancellationTokenSource();
+            var started = new ManualResetEventSlim(false);
+            var finished = new ManualResetEventSlim(false);
+
+            var thread = new Thread(() =>
+            {
+                started.Set();
+                foreach (var command in Subject.GetConsumingEnumerable(cts.Token))
+                {
+                    command.Should().NotBeNull();
+                }
+
+                finished.Set();
+            });
+
+            thread.IsBackground = true;
+            thread.Start();
+
+            started.Wait(TimeSpan.FromSeconds(2)).Should().BeTrue();
+            cts.Cancel();
+            finished.Wait(TimeSpan.FromSeconds(2)).Should().BeTrue();
         }
     }
 }

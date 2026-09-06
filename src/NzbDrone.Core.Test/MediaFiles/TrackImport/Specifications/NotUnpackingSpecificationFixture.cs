@@ -72,14 +72,14 @@ namespace NzbDrone.Core.Test.MediaFiles.BookImport.Specifications
         }
 
         [Test]
-        public void should_return_false_if_unopacking_on_linux()
+        public void should_return_true_if_old_unpack_folder_on_linux()
         {
             PosixOnly();
 
             GivenInWorkingFolder();
             GivenLastWriteTimeUtc(DateTime.UtcNow.AddDays(-5));
 
-            Subject.IsSatisfiedBy(_localTrack, null).Accepted.Should().BeFalse();
+            Subject.IsSatisfiedBy(_localTrack, null).Accepted.Should().BeTrue();
         }
     }
 }

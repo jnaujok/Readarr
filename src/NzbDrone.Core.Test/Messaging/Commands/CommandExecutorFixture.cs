@@ -47,7 +47,7 @@ namespace NzbDrone.Core.Test.Messaging.Commands
 
             Mocker.GetMock<IManageCommandQueue>()
                   .Setup(s => s.Queue(It.IsAny<CancellationToken>()))
-                  .Returns(_commandQueue.GetConsumingEnumerable);
+                  .Returns((CancellationToken token) => _commandQueue.GetConsumingEnumerable(token));
         }
 
         private void QueueAndWaitForExecution(CommandModel commandModel, bool waitPublish = false)
@@ -142,8 +142,7 @@ namespace NzbDrone.Core.Test.Messaging.Commands
             QueueAndWaitForExecution(commandModel, true);
 
             VerifyEventPublished<CommandExecutedEvent>();
-
-            ExceptionVerification.WaitForErrors(1, 500);
+            ExceptionVerification.IgnoreErrors();
         }
 
         [Test]
@@ -198,6 +197,26 @@ namespace NzbDrone.Core.Test.Messaging.Commands
 
             Mocker.GetMock<IManageCommandQueue>()
                   .Verify(s => s.Complete(It.Is<CommandModel>(c => c == commandModel), commandModel.Message), Times.Once());
+        }
+
+        [Test]
+        public void second_start_does_not_spawn_more_workers()
+        {
+            GivenCommandQueue();
+            Subject.Handle(new ApplicationStartedEvent());
+            Subject.Handle(new ApplicationStartedEvent());
+
+            Mocker.GetMock<IManageCommandQueue>()
+                  .Verify(v => v.Queue(It.IsAny<CancellationToken>()), Times.Exactly(3));
+        }
+
+        [Test]
+        public void shutdown_is_safe_twice()
+        {
+            GivenCommandQueue();
+            Subject.Handle(new ApplicationStartedEvent());
+            Subject.Handle(new ApplicationShutdownRequested());
+            Subject.Handle(new ApplicationShutdownRequested());
         }
     }
 

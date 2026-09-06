@@ -15,9 +15,12 @@ using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
 using NzbDrone.Common.Serializer;
+using NzbDrone.Common.TPL;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.Lifecycle;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles;
+using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.RemotePathMappings;
 using NzbDrone.Core.Validation;
 
@@ -36,7 +39,7 @@ namespace NzbDrone.Core.Books.Calibre
         void Test(CalibreSettings settings);
     }
 
-    public class CalibreProxy : ICalibreProxy
+    public class CalibreProxy : ICalibreProxy, IHandle<ApplicationShutdownRequested>
     {
         private const int PAGE_SIZE = 750;
 
@@ -48,6 +51,7 @@ namespace NzbDrone.Core.Books.Calibre
         private readonly IConfigService _configService;
         private readonly Logger _logger;
         private readonly ICached<CalibreBook> _bookCache;
+        private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
 
         public CalibreProxy(IHttpClient httpClient,
                             IMapCoversToLocal mediaCoverService,
@@ -386,8 +390,7 @@ namespace NzbDrone.Core.Books.Calibre
 
                 var jobId = _httpClient.Post<long>(request).Resource;
 
-                // Run async task to check if conversion complete
-                _ = PollConvertStatus(jobId, settings);
+                _ = PollConvertStatus(jobId, settings).LogExceptions();
 
                 return jobId;
             }
@@ -574,27 +577,40 @@ namespace NzbDrone.Core.Books.Calibre
             return builder;
         }
 
+        public void Handle(ApplicationShutdownRequested message)
+        {
+            try
+            {
+                _shutdownCts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+
         private async Task PollConvertStatus(long jobId, CalibreSettings settings)
         {
             var request = GetBuilder($"/conversion/status/{jobId}", settings)
                 .AddQueryParam("library_id", settings.Library)
                 .Build();
 
-            while (true)
+            try
             {
-                var status = _httpClient.Get<CalibreConversionStatus>(request).Resource;
-
-                if (!status.Running)
-                {
-                    if (!status.Ok)
-                    {
-                        _logger.Warn("Calibre conversion failed.\n{0}\n{1}", status.Traceback, status.Log);
-                    }
-
-                    return;
-                }
-
-                await Task.Delay(2000);
+                await CalibreConversionPoller.PollAsync(
+                    () => _httpClient.Get<CalibreConversionStatus>(request).Resource,
+                    (traceback, log) => _logger.Warn("Calibre conversion failed.\n{0}\n{1}", traceback, log),
+                    message => _logger.Warn("Calibre conversion timed out for job {0}: {1}", jobId, message),
+                    CalibreConversionPoller.DefaultMaxAttempts,
+                    _shutdownCts.Token,
+                    (milliseconds, token) => Task.Delay(milliseconds, token));
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Debug("Stopped polling Calibre conversion job {0}", jobId);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error polling Calibre conversion job {0}", jobId);
             }
         }
 

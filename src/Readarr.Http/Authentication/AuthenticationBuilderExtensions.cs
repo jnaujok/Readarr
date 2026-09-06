@@ -30,7 +30,7 @@ namespace Readarr.Http.Authentication
 
         public static AuthenticationBuilder AddExternal(this AuthenticationBuilder authenticationBuilder, string name)
         {
-            return authenticationBuilder.AddScheme<AuthenticationSchemeOptions, NoAuthenticationHandler>(name, options => { });
+            return authenticationBuilder.AddScheme<AuthenticationSchemeOptions, ExternalAuthenticationHandler>(name, options => { });
         }
 
         public static AuthenticationBuilder AddAppAuthentication(this IServiceCollection services)
@@ -51,6 +51,8 @@ namespace Readarr.Http.Authentication
                     options.ReturnUrlParameter = "returnUrl";
                 });
 
+            services.AddSingleton<LoginRateLimiter>();
+
             return services.AddAuthentication()
                 .AddNone(AuthenticationType.None.ToString())
                 .AddExternal(AuthenticationType.External.ToString())
@@ -60,11 +62,13 @@ namespace Readarr.Http.Authentication
                 {
                     options.HeaderName = "X-Api-Key";
                     options.QueryName = "apikey";
+                    options.AllowQueryString = false;
                 })
                 .AddApiKey("SignalR", options =>
                 {
                     options.HeaderName = "X-Api-Key";
                     options.QueryName = "access_token";
+                    options.AllowQueryString = true;
                 });
         }
     }

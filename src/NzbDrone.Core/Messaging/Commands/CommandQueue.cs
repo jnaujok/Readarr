@@ -47,14 +47,10 @@ namespace NzbDrone.Core.Messaging.Commands
 
         public List<CommandModel> All()
         {
-            List<CommandModel> rval = null;
-
             lock (_mutex)
             {
-                rval = _items;
+                return new List<CommandModel>(_items);
             }
-
-            return rval;
         }
 
         public CommandModel Find(int id)
@@ -108,29 +104,30 @@ namespace NzbDrone.Core.Messaging.Commands
 
         public IEnumerable<CommandModel> GetConsumingEnumerable(CancellationToken cancellationToken)
         {
-            cancellationToken.Register(PulseAllConsumers);
-
-            while (!cancellationToken.IsCancellationRequested)
+            using (cancellationToken.Register(PulseAllConsumers))
             {
-                CommandModel command = null;
-
-                lock (_mutex)
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    if (cancellationToken.IsCancellationRequested)
+                    CommandModel command = null;
+
+                    lock (_mutex)
                     {
-                        break;
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        if (!TryGet(out command))
+                        {
+                            Monitor.Wait(_mutex, TimeSpan.FromSeconds(1));
+                            continue;
+                        }
                     }
 
-                    if (!TryGet(out command))
+                    if (command != null)
                     {
-                        Monitor.Wait(_mutex);
-                        continue;
+                        yield return command;
                     }
-                }
-
-                if (command != null)
-                {
-                    yield return command;
                 }
             }
         }

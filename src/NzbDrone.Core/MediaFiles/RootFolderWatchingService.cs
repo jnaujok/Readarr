@@ -29,6 +29,7 @@ namespace NzbDrone.Core.MediaFiles
         IDisposable,
         IHandle<ModelEvent<RootFolder>>,
         IHandle<ApplicationStartedEvent>,
+        IHandle<ApplicationShutdownRequested>,
         IHandle<ConfigSavedEvent>
     {
         private const int DEBOUNCE_TIMEOUT_SECONDS = 30;
@@ -44,6 +45,7 @@ namespace NzbDrone.Core.MediaFiles
 
         private readonly Debouncer _scanDebouncer;
         private bool _watchForChanges;
+        private volatile bool _stopped;
 
         public RootFolderWatchingService(IRootFolderService rootFolderService,
                                          IManageCommandQueue commandQueueManager,
@@ -60,10 +62,19 @@ namespace NzbDrone.Core.MediaFiles
 
         public void Dispose()
         {
+            _stopped = true;
+
             foreach (var watcher in _fileSystemWatchers.Values)
             {
                 DisposeWatcher(watcher, false);
             }
+
+            _fileSystemWatchers.Clear();
+        }
+
+        public void Handle(ApplicationShutdownRequested message)
+        {
+            Dispose();
         }
 
         public void ReportFileSystemChangeBeginning(params string[] paths)
@@ -131,6 +142,11 @@ namespace NzbDrone.Core.MediaFiles
             {
                 try
                 {
+                    if (_stopped)
+                    {
+                        return;
+                    }
+
                     var newWatcher = new FileSystemWatcher(path, "*")
                     {
                         IncludeSubdirectories = true,
@@ -144,15 +160,24 @@ namespace NzbDrone.Core.MediaFiles
                     newWatcher.Changed += Watcher_Changed;
                     newWatcher.Error += Watcher_Error;
 
-                    if (_fileSystemWatchers.TryAdd(path, newWatcher))
+                    if (!FileSystemWatcherLifecycle.TryEnable(
+                            _fileSystemWatchers,
+                            path,
+                            newWatcher,
+                            () => _stopped,
+                            watcher => DisposeWatcher(watcher, false)))
                     {
-                        newWatcher.EnableRaisingEvents = true;
-                        _logger.Info("Watching directory {0}", path);
+                        return;
                     }
-                    else
+
+                    if (_stopped)
                     {
-                        DisposeWatcher(newWatcher, false);
+                        DisposeWatcher(newWatcher, true);
+                        return;
                     }
+
+                    newWatcher.EnableRaisingEvents = true;
+                    _logger.Info("Watching directory {0}", path);
                 }
                 catch (Exception ex)
                 {

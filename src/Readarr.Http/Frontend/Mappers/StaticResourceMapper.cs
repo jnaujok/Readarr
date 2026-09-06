@@ -20,10 +20,10 @@ namespace Readarr.Http.Frontend.Mappers
 
         public override string Map(string resourceUrl)
         {
-            var path = resourceUrl.Replace('/', Path.DirectorySeparatorChar);
-            path = path.Trim(Path.DirectorySeparatorChar);
+            var uiRoot = Path.Combine(_appFolderInfo.StartUpFolder, _configFileProvider.UiFolder);
+            var relative = resourceUrl.Replace('/', Path.DirectorySeparatorChar).Trim(Path.DirectorySeparatorChar);
 
-            return Path.Combine(_appFolderInfo.StartUpFolder, _configFileProvider.UiFolder, path);
+            return ConfineToRoot(uiRoot, relative);
         }
 
         public override bool CanHandle(string resourceUrl)

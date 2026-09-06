@@ -8,7 +8,7 @@ using Readarr.Api.V1.RootFolders;
 namespace NzbDrone.Integration.Test.ApiTests.WantedTests
 {
     [TestFixture]
-    [Ignore("Waiting for metadata to be back again", Until = "2026-01-15 00:00:00Z")]
+    [Ignore("Waiting for metadata to be back again")]
     public class CutoffUnmetFixture : IntegrationTest
     {
         [SetUp]
