@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using NLog;
 using NzbDrone.Common.Disk;
@@ -134,6 +135,23 @@ namespace NzbDrone.Core.MediaFiles
             }
 
             if (existing.Part > 0 && incoming.Part > 0 && existing.Part != incoming.Part)
+            {
+                return false;
+            }
+
+            if (existing.Quality?.Quality != null &&
+                incoming.Quality?.Quality != null &&
+                existing.Quality.Quality.Id != incoming.Quality.Quality.Id)
+            {
+                return false;
+            }
+
+            var existingExt = Path.GetExtension(existing.Path ?? string.Empty);
+            var incomingExt = Path.GetExtension(incoming.Path ?? string.Empty);
+
+            if (existingExt.IsNotNullOrWhiteSpace() &&
+                incomingExt.IsNotNullOrWhiteSpace() &&
+                !existingExt.Equals(incomingExt, System.StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }

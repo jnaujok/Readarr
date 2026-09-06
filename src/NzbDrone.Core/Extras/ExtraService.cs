@@ -92,9 +92,7 @@ namespace NzbDrone.Core.Extras
 
             foreach (var matchingFilename in filteredFilenames)
             {
-                var matchingExtension = wantedExtensions.FirstOrDefault(e => matchingFilename.EndsWith(e));
-
-                if (matchingExtension == null)
+                if (!ExtraFileMatcher.IsWanted(matchingFilename, wantedExtensions))
                 {
                     continue;
                 }

@@ -1,4 +1,4 @@
-using NzbDrone.Core.Parser;
+using System;
 
 namespace NzbDrone.Core.IndexerSearch.Definitions
 {
@@ -9,7 +9,21 @@ namespace NzbDrone.Core.IndexerSearch.Definitions
         public string BookIsbn { get; set; }
         public string Disambiguation { get; set; }
 
-        public string BookQuery => GetQueryTitle(BookTitle.SplitBookTitle(Author.Name).Item1);
+        public string BookQuery
+        {
+            get
+            {
+                var title = BookTitle ?? string.Empty;
+                var authorPrefix = $"{Author.Name}:";
+
+                if (title.StartsWith(authorPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    title = title.Substring(authorPrefix.Length).Trim();
+                }
+
+                return GetQueryTitle(title);
+            }
+        }
 
         public override string ToString()
         {

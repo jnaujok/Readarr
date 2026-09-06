@@ -103,6 +103,8 @@ namespace Readarr.Api.V1.Indexers
                 DownloadUrl = releaseInfo.DownloadUrl,
                 InfoUrl = releaseInfo.InfoUrl,
                 DownloadAllowed = remoteBook.DownloadAllowed,
+                AuthorId = remoteBook.Author?.Id,
+                BookId = remoteBook.Books?.FirstOrDefault()?.Id,
 
                 // ReleaseWeight
                 CustomFormatScore = remoteBook.CustomFormatScore,
