@@ -162,6 +162,23 @@ namespace NzbDrone.Common.Test
         }
 
         [Test]
+        public void TrustedNetworks_defaults_to_empty()
+        {
+            Subject.TrustedNetworks.Should().BeEmpty();
+        }
+
+        [Test]
+        public void TrustedNetworks_saves_and_normalizes()
+        {
+            var dic = Subject.GetConfigDictionary();
+            dic["TrustedNetworks"] = " 10.0.0.0/8,  192.168.1.1 ";
+
+            Subject.SaveConfigDictionary(dic);
+
+            Subject.TrustedNetworks.Should().Be("10.0.0.0/8, 192.168.1.1");
+        }
+
+        [Test]
         public void SaveDictionary_should_save_proper_value()
         {
             var port = 20555;

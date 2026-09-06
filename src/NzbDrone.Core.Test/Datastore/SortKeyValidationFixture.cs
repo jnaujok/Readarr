@@ -1,3 +1,4 @@
+using System;
 using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Core.Datastore;
@@ -24,6 +25,12 @@ namespace NzbDrone.Core.Test.Datastore
         public void should_return_true_for_valid_sort_key(string sortKey)
         {
             TableMapping.Mapper.IsValidSortKey(sortKey).Should().BeTrue();
+        }
+
+        [Test]
+        public void get_sort_key_should_throw_for_invalid_key()
+        {
+            Assert.Throws<ArgumentException>(() => TableMapping.Mapper.GetSortKey("column; DROP TABLE Commands;--"));
         }
     }
 }

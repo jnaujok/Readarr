@@ -107,10 +107,15 @@ namespace NzbDrone.Core.Datastore
 
             if (table != null)
             {
-                table = TableMap.Values.FirstOrDefault(x => x.Equals(table, StringComparison.OrdinalIgnoreCase)) ?? table;
+                table = TableMap.Values.FirstOrDefault(x => x.Equals(table, StringComparison.OrdinalIgnoreCase));
             }
 
-            sortKey = _allowedOrderBy.FirstOrDefault(x => x.Equals(sortKey, StringComparison.OrdinalIgnoreCase)) ?? sortKey;
+            sortKey = _allowedOrderBy.FirstOrDefault(x => x.Equals(sortKey, StringComparison.OrdinalIgnoreCase));
+
+            if (sortKey == null)
+            {
+                throw new ArgumentException("Sort key is not in the allow list");
+            }
 
             return (table, sortKey);
         }

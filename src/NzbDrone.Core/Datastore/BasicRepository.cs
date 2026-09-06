@@ -400,6 +400,7 @@ namespace NzbDrone.Core.Datastore
             catch (Exception e)
             {
                 e.Data.Add("SQL", SqlBuilderExtensions.GetSqlLogString(sql, model));
+                throw;
             }
         }
 
@@ -419,6 +420,7 @@ namespace NzbDrone.Core.Datastore
             catch (Exception e)
             {
                 e.Data.Add("SQL", SqlBuilderExtensions.GetSqlLogString(sql, models));
+                throw;
             }
         }
 
@@ -450,6 +452,11 @@ namespace NzbDrone.Core.Datastore
             if (pagingSpec.SortKey == null)
             {
                 pagingSpec.SortKey = $"{_table}.{_keyProperty.Name}";
+            }
+
+            if (!TableMapping.Mapper.IsValidSortKey(pagingSpec.SortKey))
+            {
+                throw new ArgumentException($"Invalid sort key '{pagingSpec.SortKey}'");
             }
 
             var sortKey = TableMapping.Mapper.GetSortKey(pagingSpec.SortKey);

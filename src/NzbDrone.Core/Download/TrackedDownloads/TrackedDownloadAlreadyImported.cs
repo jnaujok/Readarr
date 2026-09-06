@@ -30,9 +30,10 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                 return false;
             }
 
-            if (trackedDownload.RemoteBook == null || trackedDownload.RemoteBook.Books == null)
+            if (trackedDownload.RemoteBook == null || trackedDownload.RemoteBook.Books == null || trackedDownload.RemoteBook.Books.Count == 0)
             {
-                return true;
+                _logger.Trace("Download '{0}' is unidentified; not treating as imported", trackedDownload.DownloadItem.Title);
+                return false;
             }
 
             var allBooksImportedInHistory = trackedDownload.RemoteBook.Books.All(book =>

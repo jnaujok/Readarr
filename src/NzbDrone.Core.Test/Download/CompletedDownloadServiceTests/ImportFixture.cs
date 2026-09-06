@@ -348,6 +348,45 @@ namespace NzbDrone.Core.Test.Download.CompletedDownloadServiceTests
         }
 
         [Test]
+        public void should_not_mark_as_imported_if_download_is_unidentified()
+        {
+            _trackedDownload.RemoteBook = null;
+
+            Mocker.GetMock<IDownloadedBooksImportService>()
+                  .Setup(v => v.ProcessPath(It.IsAny<string>(), It.IsAny<ImportMode>(), It.IsAny<Author>(), It.IsAny<DownloadClientItem>()))
+                  .Returns(new List<ImportResult>
+                           {
+                               new ImportResult(
+                                   new ImportDecision<LocalBook>(
+                                       new LocalBook { Path = @"C:\TestPath\Droned.S01E01.mkv".AsOsAgnostic(), Author = _author }))
+                           });
+
+            var history = Builder<EntityHistory>.CreateListOfSize(1)
+                .All()
+                .With(x => x.EventType = EntityHistoryEventType.BookFileImported)
+                .BuildList();
+
+            Mocker.GetMock<IHistoryService>()
+                  .Setup(s => s.FindByDownloadId(It.IsAny<string>()))
+                  .Returns(history);
+
+            Mocker.GetMock<ITrackedDownloadAlreadyImported>()
+                  .Setup(s => s.IsImported(It.IsAny<TrackedDownload>(), It.IsAny<List<EntityHistory>>()))
+                  .Returns(true);
+
+            Subject.Import(_trackedDownload);
+
+            Mocker.GetMock<IEventAggregator>()
+                  .Verify(v => v.PublishEvent(It.IsAny<DownloadCompletedEvent>()), Times.Never());
+
+            _trackedDownload.State.Should().NotBe(TrackedDownloadState.Imported);
+            Subject.VerifyImport(_trackedDownload, new List<ImportResult>
+            {
+                new ImportResult(new ImportDecision<LocalBook>(new LocalBook { Path = @"C:\TestPath\file.epub".AsOsAgnostic(), Author = _author }))
+            }).Should().BeFalse();
+        }
+
+        [Test]
         public void should_mark_as_imported_if_the_download_can_be_tracked_using_the_source_seriesid()
         {
             GivenABadlyNamedDownload();

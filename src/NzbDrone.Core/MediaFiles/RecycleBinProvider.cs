@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NLog;
 using NzbDrone.Common.Disk;
@@ -8,6 +9,7 @@ using NzbDrone.Core.Configuration;
 using NzbDrone.Core.MediaFiles.BookImport;
 using NzbDrone.Core.MediaFiles.Commands;
 using NzbDrone.Core.Messaging.Commands;
+using NzbDrone.Core.RootFolders;
 
 namespace NzbDrone.Core.MediaFiles
 {
@@ -24,16 +26,19 @@ namespace NzbDrone.Core.MediaFiles
         private readonly IDiskTransferService _diskTransferService;
         private readonly IDiskProvider _diskProvider;
         private readonly IConfigService _configService;
+        private readonly IRootFolderService _rootFolderService;
         private readonly Logger _logger;
 
         public RecycleBinProvider(IDiskTransferService diskTransferService,
                                   IDiskProvider diskProvider,
                                   IConfigService configService,
+                                  IRootFolderService rootFolderService,
                                   Logger logger)
         {
             _diskTransferService = diskTransferService;
             _diskProvider = diskProvider;
             _configService = configService;
+            _rootFolderService = rootFolderService;
             _logger = logger;
         }
 
@@ -51,6 +56,13 @@ namespace NzbDrone.Core.MediaFiles
             else
             {
                 var destination = Path.Combine(recyclingBin, new DirectoryInfo(path).Name);
+                var index = 1;
+                var originalDestination = destination;
+                while (_diskProvider.FolderExists(destination) || _diskProvider.FileExists(destination))
+                {
+                    index++;
+                    destination = originalDestination + "_" + index;
+                }
 
                 _logger.Debug("Moving '{0}' to '{1}'", path, destination);
                 _diskTransferService.TransferFolder(path, destination, TransferMode.Move);
@@ -139,6 +151,12 @@ namespace NzbDrone.Core.MediaFiles
                 return;
             }
 
+            if (OverlapsLibrary(_configService.RecycleBin))
+            {
+                _logger.Error("Refusing to empty recycle bin '{0}' because it overlaps a library root or is a filesystem root", _configService.RecycleBin);
+                throw new RecycleBinException($"Recycle bin '{_configService.RecycleBin}' overlaps a library folder and will not be emptied.");
+            }
+
             _logger.Info("Removing all items from the recycling bin");
 
             foreach (var folder in _diskProvider.GetDirectories(_configService.RecycleBin))
@@ -186,6 +204,52 @@ namespace NzbDrone.Core.MediaFiles
             _diskProvider.RemoveEmptySubfolders(_configService.RecycleBin);
 
             _logger.Debug("Recycling Bin has been cleaned up.");
+        }
+
+        private bool OverlapsLibrary(string path)
+        {
+            string full;
+            try
+            {
+                full = Path.GetFullPath(path);
+            }
+            catch (Exception)
+            {
+                return true;
+            }
+
+            var directory = new DirectoryInfo(full);
+            if (directory.Parent == null)
+            {
+                return true;
+            }
+
+            var roots = _rootFolderService.All() ?? new List<RootFolder>();
+
+            foreach (var root in roots)
+            {
+                if (root == null || root.Path.IsNullOrWhiteSpace())
+                {
+                    continue;
+                }
+
+                string rootFull;
+                try
+                {
+                    rootFull = Path.GetFullPath(root.Path);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+
+                if (full.PathEquals(rootFull) || full.IsParentPath(rootFull) || rootFull.IsParentPath(full))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void SetLastWriteTime(string file, DateTime dateTime)

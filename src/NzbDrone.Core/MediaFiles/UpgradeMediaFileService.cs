@@ -51,18 +51,24 @@ namespace NzbDrone.Core.MediaFiles
 
             var rootFolderPath = _diskProvider.GetParentFolder(localBook.Author.Path);
             var rootFolder = _rootFolderService.GetBestRootFolder(rootFolderPath);
-            var isCalibre = rootFolder.IsCalibreLibrary && rootFolder.CalibreSettings != null;
 
-            var settings = rootFolder.CalibreSettings;
-
-            // If there are existing book files and the root folder is missing, throw, so the old file isn't left behind during the import process.
-            if (existingFiles.Any() && !_diskProvider.FolderExists(rootFolderPath))
+            if (existingFiles.Any() && (rootFolder == null || !_diskProvider.FolderExists(rootFolderPath)))
             {
                 throw new RootFolderNotFoundException($"Root folder '{rootFolderPath}' was not found.");
             }
 
+            var isCalibre = rootFolder != null && rootFolder.IsCalibreLibrary && rootFolder.CalibreSettings != null;
+
+            var settings = rootFolder?.CalibreSettings;
+
             foreach (var file in existingFiles)
             {
+                if (!ShouldReplace(file, bookFile))
+                {
+                    _logger.Debug("Keeping existing book file (different format/part): {0}", file);
+                    continue;
+                }
+
                 var bookFilePath = file.Path;
                 var subfolder = rootFolderPath.GetRelativePath(_diskProvider.GetParentFolder(bookFilePath));
 
@@ -115,6 +121,24 @@ namespace NzbDrone.Core.MediaFiles
             }
 
             return moveFileResult;
+        }
+
+        private static bool ShouldReplace(BookFile existing, BookFile incoming)
+        {
+            var existingAudio = existing.Quality?.Quality?.IsAudio == true;
+            var incomingAudio = incoming.Quality?.Quality?.IsAudio == true;
+
+            if (existingAudio != incomingAudio)
+            {
+                return false;
+            }
+
+            if (existing.Part > 0 && incoming.Part > 0 && existing.Part != incoming.Part)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

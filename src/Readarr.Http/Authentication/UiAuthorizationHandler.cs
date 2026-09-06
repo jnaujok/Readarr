@@ -26,6 +26,9 @@ namespace NzbDrone.Http.Authentication
         {
             if (_authenticationRequired == AuthenticationRequiredType.DisabledForLocalAddresses)
             {
+                // RemoteIpAddress is the TCP peer, or X-Forwarded-For only when the peer is
+                // loopback / a configured TrustedNetworks proxy. Spoofed X-Forwarded-For from
+                // an untrusted client is ignored (see ForwardedHeadersConfigurator).
                 if (context.Resource is HttpContext httpContext &&
                     IPAddress.TryParse(httpContext.GetRemoteIP(), out var ipAddress))
                 {

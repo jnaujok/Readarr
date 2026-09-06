@@ -80,6 +80,8 @@ namespace NzbDrone.Core.Qualities
         public static Quality M4B => new Quality(12, "M4B");
         public static Quality UnknownAudio => new Quality(13, "Unknown Audio");
 
+        public bool IsAudio => Id >= 10;
+
         static Quality()
         {
             All = new List<Quality>

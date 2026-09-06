@@ -14,6 +14,8 @@ using NzbDrone.Core.Books;
 using NzbDrone.Core.DecisionEngine;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.BookImport;
+using NzbDrone.Core.MediaFiles.Events;
+using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.RootFolders;
@@ -168,16 +170,25 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
         }
 
         [Test]
-        public void should_clean_if_folder_does_not_exist()
+        public void should_not_clean_if_author_folder_does_not_exist_but_root_has_other_authors()
         {
             GivenRootFolder(_otherAuthorFolder);
 
-            Subject.Scan(new List<string> { _author.Path });
+            Mocker.GetMock<IAuthorService>()
+                  .Setup(s => s.GetAuthors(It.IsAny<List<int>>()))
+                  .Returns(new List<Author> { _author });
+
+            Subject.Scan(new List<string> { _author.Path }, authorIds: new List<int> { _author.Id });
 
             DiskProvider.FolderExists(_author.Path).Should().BeFalse();
+            ExceptionVerification.ExpectedWarns(1);
 
             Mocker.GetMock<IMediaFileTableCleanupService>()
-                  .Verify(v => v.Clean(It.IsAny<string>(), It.IsAny<List<string>>()), Times.Once());
+                  .Verify(v => v.Clean(It.IsAny<string>(), It.IsAny<List<string>>()), Times.Never());
+
+            Mocker.GetMock<IEventAggregator>()
+                  .Verify(v => v.PublishEvent(It.Is<AuthorScanSkippedEvent>(e =>
+                      e.Reason == AuthorScanSkippedReason.FolderDoesNotExist && e.Author == _author)), Times.Once());
         }
 
         [Test]
