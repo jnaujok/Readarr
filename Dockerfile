@@ -39,7 +39,7 @@ ENV READARRVERSION=${READARRVERSION} \
     BUILD_SOURCEBRANCHNAME=${BRANCH}
 
 WORKDIR /src
-COPY build.sh LICENSE.md global.json ./
+COPY build.sh LICENSE.md global.json .editorconfig ./
 COPY src ./src
 COPY distribution ./distribution
 RUN --mount=type=cache,target=/root/.nuget/packages \
