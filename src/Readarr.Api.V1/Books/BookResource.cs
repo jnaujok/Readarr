@@ -24,6 +24,9 @@ namespace Readarr.Api.V1.Books
         public string TitleSlug { get; set; }
         public bool Monitored { get; set; }
         public bool AnyEditionOk { get; set; }
+        public List<NzbDrone.Core.Qualities.BookFormatKind> WantedFormatKinds { get; set; }
+        public List<NzbDrone.Core.Qualities.BookFormatKind> CollectedFormats { get; set; }
+        public List<NzbDrone.Core.Qualities.BookFormatKind> MissingFormats { get; set; }
         public Ratings Ratings { get; set; }
         public DateTime? ReleaseDate { get; set; }
         public int PageCount { get; set; }
@@ -70,6 +73,7 @@ namespace Readarr.Api.V1.Books
                 TitleSlug = model.TitleSlug,
                 Monitored = model.Monitored,
                 AnyEditionOk = model.AnyEditionOk,
+                WantedFormatKinds = model.WantedFormatKinds,
                 ReleaseDate = model.ReleaseDate,
                 PageCount = selectedEdition?.PageCount ?? 0,
                 Genres = model.Genres,
@@ -103,6 +107,7 @@ namespace Readarr.Api.V1.Books
                 Title = resource.Title,
                 Monitored = resource.Monitored,
                 AnyEditionOk = resource.AnyEditionOk,
+                WantedFormatKinds = resource.WantedFormatKinds,
                 Editions = resource.Editions.ToModel(),
                 AddOptions = resource.AddOptions,
                 Author = author,

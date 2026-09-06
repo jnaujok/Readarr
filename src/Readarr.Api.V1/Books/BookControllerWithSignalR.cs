@@ -60,6 +60,7 @@ namespace Readarr.Api.V1.Books
 
             FetchAndLinkBookStatistics(resource);
             MapCoversToLocal(resource);
+            LinkFormatStatus(book, resource);
 
             return resource;
         }
@@ -102,7 +103,20 @@ namespace Readarr.Api.V1.Books
             LinkAuthorStatistics(result, authorStats);
             MapCoversToLocal(result.ToArray());
 
+            for (var i = 0; i < books.Count; i++)
+            {
+                LinkFormatStatus(books[i], result[i]);
+            }
+
             return result;
+        }
+
+        private static void LinkFormatStatus(Book book, BookResource resource)
+        {
+            var files = book.BookFiles?.Value;
+            var profile = book.Author?.Value?.QualityProfile?.Value;
+            resource.CollectedFormats = BookFormatPreference.GetCollectedKinds(files).ToList();
+            resource.MissingFormats = BookFormatPreference.GetMissingKinds(book, profile, files);
         }
 
         private void FetchAndLinkBookStatistics(BookResource resource)

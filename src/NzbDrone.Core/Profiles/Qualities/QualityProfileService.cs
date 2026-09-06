@@ -196,7 +196,8 @@ namespace NzbDrone.Core.Profiles.Qualities
                 Items = items,
                 MinFormatScore = 0,
                 CutoffFormatScore = 0,
-                FormatItems = formatItems
+                FormatItems = formatItems,
+                WantedFormatKinds = allowed.Select(q => q.FormatKind).Distinct().ToList()
             };
 
             return qualityProfile;

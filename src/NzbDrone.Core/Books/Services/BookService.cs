@@ -5,8 +5,10 @@ using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Books.Events;
 using NzbDrone.Core.Datastore;
+using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Parser;
+using NzbDrone.Core.Profiles.Qualities;
 
 namespace NzbDrone.Core.Books
 {
@@ -47,16 +49,25 @@ namespace NzbDrone.Core.Books
     {
         private readonly IBookRepository _bookRepository;
         private readonly IEditionService _editionService;
+        private readonly IAuthorService _authorService;
+        private readonly IQualityProfileService _qualityProfileService;
+        private readonly IMediaFileService _mediaFileService;
         private readonly IEventAggregator _eventAggregator;
         private readonly Logger _logger;
 
         public BookService(IBookRepository bookRepository,
                            IEditionService editionService,
+                           IAuthorService authorService,
+                           IQualityProfileService qualityProfileService,
+                           IMediaFileService mediaFileService,
                            IEventAggregator eventAggregator,
                            Logger logger)
         {
             _bookRepository = bookRepository;
             _editionService = editionService;
+            _authorService = authorService;
+            _qualityProfileService = qualityProfileService;
+            _mediaFileService = mediaFileService;
             _eventAggregator = eventAggregator;
             _logger = logger;
         }
@@ -223,9 +234,76 @@ namespace NzbDrone.Core.Books
 
         public PagingSpec<Book> BooksWithoutFiles(PagingSpec<Book> pagingSpec)
         {
-            var bookResult = _bookRepository.BooksWithoutFiles(pagingSpec);
+            var inner = new PagingSpec<Book>
+            {
+                Page = 1,
+                PageSize = 100000,
+                SortKey = pagingSpec.SortKey,
+                SortDirection = pagingSpec.SortDirection,
+                FilterExpressions = pagingSpec.FilterExpressions
+            };
 
-            return bookResult;
+            var withoutFiles = _bookRepository.BooksWithoutFiles(inner);
+            var combined = AppendBooksMissingWantedFormats(withoutFiles);
+
+            var page = Math.Max(pagingSpec.Page, 1);
+            var pageSize = pagingSpec.PageSize < 1 ? combined.Records.Count : pagingSpec.PageSize;
+            pagingSpec.TotalRecords = combined.Records.Count;
+            pagingSpec.Records = combined.Records.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return pagingSpec;
+        }
+
+        private PagingSpec<Book> AppendBooksMissingWantedFormats(PagingSpec<Book> withoutFiles)
+        {
+            var profiles = _qualityProfileService.All();
+            var authors = _authorService.GetAllAuthors().ToDictionary(a => a.AuthorMetadataId);
+            var profileById = profiles.ToDictionary(p => p.Id);
+            var missingIds = new HashSet<int>(withoutFiles.Records.Select(b => b.Id));
+            var allBooks = _bookRepository.All()
+                .Where(b => b.Monitored && (!b.ReleaseDate.HasValue || b.ReleaseDate <= DateTime.UtcNow))
+                .ToList();
+            var filesByBook = _mediaFileService.GetFilesByBooks(allBooks.Select(b => b.Id))
+                .Where(f => f.Edition != null && f.Edition.IsLoaded)
+                .GroupBy(f => f.Edition.Value.BookId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var extra = new List<Book>();
+
+            foreach (var book in allBooks)
+            {
+                if (missingIds.Contains(book.Id))
+                {
+                    continue;
+                }
+
+                if (!authors.TryGetValue(book.AuthorMetadataId, out var author) || !author.Monitored)
+                {
+                    continue;
+                }
+
+                if (!profileById.TryGetValue(author.QualityProfileId, out var profile))
+                {
+                    continue;
+                }
+
+                filesByBook.TryGetValue(book.Id, out var files);
+                files ??= new List<BookFile>();
+
+                if (BookFormatPreference.IsMissing(book, profile, files))
+                {
+                    extra.Add(book);
+                    missingIds.Add(book.Id);
+                }
+            }
+
+            if (extra.Count == 0)
+            {
+                return withoutFiles;
+            }
+
+            withoutFiles.Records = withoutFiles.Records.Concat(extra).ToList();
+            withoutFiles.TotalRecords = withoutFiles.Records.Count;
+            return withoutFiles;
         }
 
         public List<Book> BooksBetweenDates(DateTime start, DateTime end, bool includeUnmonitored)

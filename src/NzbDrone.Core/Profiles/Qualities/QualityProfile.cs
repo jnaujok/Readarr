@@ -11,6 +11,7 @@ namespace NzbDrone.Core.Profiles.Qualities
         public QualityProfile()
         {
             FormatItems = new List<ProfileFormatItem>();
+            WantedFormatKinds = new List<BookFormatKind>();
         }
 
         public string Name { get; set; }
@@ -20,6 +21,7 @@ namespace NzbDrone.Core.Profiles.Qualities
         public int CutoffFormatScore { get; set; }
         public List<ProfileFormatItem> FormatItems { get; set; }
         public List<QualityProfileQualityItem> Items { get; set; }
+        public List<BookFormatKind> WantedFormatKinds { get; set; }
 
         public Quality FirstAllowedQuality()
         {

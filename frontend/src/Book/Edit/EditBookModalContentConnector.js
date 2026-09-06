@@ -31,7 +31,8 @@ function createMapStateToProps() {
 
       const bookSettings = _.pick(book, [
         'monitored',
-        'anyEditionOk'
+        'anyEditionOk',
+        'wantedFormatKinds'
       ]);
       bookSettings.editions = editionState.items;
 
