@@ -50,7 +50,7 @@ namespace NzbDrone.Core.Books
         private readonly IBookRepository _bookRepository;
         private readonly IEditionService _editionService;
         private readonly IAuthorService _authorService;
-        private readonly IQualityProfileService _qualityProfileService;
+        private readonly IProfileRepository _profileRepository;
         private readonly IMediaFileService _mediaFileService;
         private readonly IEventAggregator _eventAggregator;
         private readonly Logger _logger;
@@ -58,7 +58,7 @@ namespace NzbDrone.Core.Books
         public BookService(IBookRepository bookRepository,
                            IEditionService editionService,
                            IAuthorService authorService,
-                           IQualityProfileService qualityProfileService,
+                           IProfileRepository profileRepository,
                            IMediaFileService mediaFileService,
                            IEventAggregator eventAggregator,
                            Logger logger)
@@ -66,7 +66,7 @@ namespace NzbDrone.Core.Books
             _bookRepository = bookRepository;
             _editionService = editionService;
             _authorService = authorService;
-            _qualityProfileService = qualityProfileService;
+            _profileRepository = profileRepository;
             _mediaFileService = mediaFileService;
             _eventAggregator = eventAggregator;
             _logger = logger;
@@ -255,7 +255,7 @@ namespace NzbDrone.Core.Books
 
         private PagingSpec<Book> AppendBooksMissingWantedFormats(PagingSpec<Book> withoutFiles)
         {
-            var profiles = _qualityProfileService.All();
+            var profiles = _profileRepository.All();
             var authors = _authorService.GetAllAuthors().ToDictionary(a => a.AuthorMetadataId);
             var profileById = profiles.ToDictionary(p => p.Id);
             var missingIds = new HashSet<int>(withoutFiles.Records.Select(b => b.Id));

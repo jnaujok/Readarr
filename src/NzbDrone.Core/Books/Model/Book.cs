@@ -40,6 +40,7 @@ namespace NzbDrone.Core.Books
         public string CleanTitle { get; set; }
         public bool Monitored { get; set; }
         public bool AnyEditionOk { get; set; }
+        [MemberwiseEqualityIgnore]
         public List<NzbDrone.Core.Qualities.BookFormatKind> WantedFormatKinds { get; set; }
         public DateTime? LastInfoSync { get; set; }
         public DateTime Added { get; set; }

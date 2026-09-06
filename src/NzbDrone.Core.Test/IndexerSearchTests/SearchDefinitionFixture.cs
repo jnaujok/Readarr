@@ -17,7 +17,7 @@ namespace NzbDrone.Core.Test.IndexerSearchTests
         }
 
         [TestCase("…and Justice for All", "and+Justice+for+All")]
-        [TestCase("American III: Solitary Man", "American+III")]
+        [TestCase("American III: Solitary Man", "American+III+Solitary+Man")]
         [TestCase("Sad Clowns & Hillbillies", "Sad+Clowns+Hillbillies")]
         [TestCase("¿Quién sabe?", "Quien+sabe")]
         [TestCase("Seal the Deal & Let’s Boogie", "Seal+the+Deal+Let’s+Boogie")]
