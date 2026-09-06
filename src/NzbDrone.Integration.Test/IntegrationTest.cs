@@ -9,7 +9,6 @@ using NzbDrone.Core.Datastore.Migration.Framework;
 using NzbDrone.Core.Indexers.Newznab;
 using NzbDrone.Test.Common;
 using NzbDrone.Test.Common.Datastore;
-using Readarr.Api.V1.Config;
 
 namespace NzbDrone.Integration.Test
 {
