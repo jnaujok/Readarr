@@ -117,14 +117,19 @@ export const actionHandlers = handleThunks({
       isSaving: true
     }));
 
+    const body = {
+      authors,
+      monitorNewItems
+    };
+
+    if (payload.hasOwnProperty('monitor') && monitor != null) {
+      body.monitoringOptions = { monitor };
+    }
+
     const promise = createAjaxRequest({
       url: '/bookshelf',
       method: 'POST',
-      data: JSON.stringify({
-        authors,
-        monitoringOptions: { monitor },
-        monitorNewItems
-      }),
+      data: JSON.stringify(body),
       dataType: 'json'
     }).request;
 

@@ -4,6 +4,7 @@ using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Core.Books;
+using NzbDrone.Core.Books.Events;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.RootFolders;
@@ -146,6 +147,32 @@ namespace NzbDrone.Core.Test.MediaFiles.MediaFileDeletionService
             ExceptionVerification.ExpectedErrors(1);
             Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(_trackFile.Path, "Author Name"), Times.Once());
             Mocker.GetMock<IMediaFileService>().Verify(v => v.Delete(_trackFile, DeleteMediaFileReason.Manual), Times.Never());
+        }
+
+        [Test]
+        public void should_delete_book_files_from_disk_when_book_is_deleted()
+        {
+            GivenNonCalibreRootFolder();
+
+            var book = Builder<Book>.CreateNew().Build();
+            Mocker.GetMock<IMediaFileService>()
+                  .Setup(s => s.GetFilesByBook(book.Id))
+                  .Returns(new System.Collections.Generic.List<BookFile> { _trackFile });
+
+            Subject.Handle(new BookDeletedEvent(book, true, false));
+
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(_trackFile.Path, It.IsAny<string>()), Times.Once());
+        }
+
+        [Test]
+        public void should_not_delete_book_files_from_disk_when_delete_files_is_false()
+        {
+            var book = Builder<Book>.CreateNew().Build();
+
+            Subject.Handle(new BookDeletedEvent(book, false, false));
+
+            Mocker.GetMock<IMediaFileService>().Verify(v => v.GetFilesByBook(It.IsAny<int>()), Times.Never());
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
         }
     }
 }

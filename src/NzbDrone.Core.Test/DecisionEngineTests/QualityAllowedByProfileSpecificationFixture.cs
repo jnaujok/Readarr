@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using FizzWare.NBuilder;
 using FluentAssertions;
 using NUnit.Framework;
@@ -61,6 +62,19 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
             _remoteBook.Author.QualityProfile.Value.Items = Qualities.QualityFixture.GetDefaultQualities(Quality.MP3, Quality.MP3, Quality.MP3);
 
             Subject.IsSatisfiedBy(_remoteBook, null).Accepted.Should().BeFalse();
+        }
+
+        [Test]
+        public void should_allow_release_when_any_listed_format_is_in_profile()
+        {
+            _remoteBook.ParsedBookInfo.Quality.Quality = Quality.AZW3;
+            _remoteBook.ParsedBookInfo.Qualities = new List<Quality> { Quality.AZW3, Quality.EPUB, Quality.MOBI };
+            _remoteBook.Author.QualityProfile.Value.Items = Qualities.QualityFixture.GetDefaultQualities(Quality.EPUB);
+
+            var decision = Subject.IsSatisfiedBy(_remoteBook, null);
+
+            decision.Accepted.Should().BeTrue();
+            _remoteBook.ParsedBookInfo.Quality.Quality.Should().Be(Quality.EPUB);
         }
     }
 }

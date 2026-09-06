@@ -125,6 +125,30 @@ namespace NzbDrone.Core.Parser
             return result;
         }
 
+        public static List<Quality> ParseQualities(string name)
+        {
+            var qualities = new List<Quality>();
+
+            if (name.IsNullOrWhiteSpace())
+            {
+                return qualities;
+            }
+
+            var normalizedName = name.Replace('_', ' ').Trim().ToLower();
+
+            foreach (Match match in CodecRegex.Matches(normalizedName))
+            {
+                var quality = QualityFromCodec(CodecFromMatch(match));
+
+                if (quality != Quality.Unknown && !qualities.Contains(quality))
+                {
+                    qualities.Add(quality);
+                }
+            }
+
+            return qualities;
+        }
+
         public static Codec ParseCodec(string name, string origName)
         {
             if (name.IsNullOrWhiteSpace())
@@ -139,6 +163,11 @@ namespace NzbDrone.Core.Parser
                 return Codec.Unknown;
             }
 
+            return CodecFromMatch(match);
+        }
+
+        private static Codec CodecFromMatch(Match match)
+        {
             if (match.Groups["PDF"].Success)
             {
                 return Codec.PDF;
@@ -225,6 +254,40 @@ namespace NzbDrone.Core.Parser
             }
 
             return Codec.Unknown;
+        }
+
+        private static Quality QualityFromCodec(Codec codec)
+        {
+            switch (codec)
+            {
+                case Codec.PDF:
+                    return Quality.PDF;
+                case Codec.EPUB:
+                    return Quality.EPUB;
+                case Codec.MOBI:
+                    return Quality.MOBI;
+                case Codec.AZW3:
+                    return Quality.AZW3;
+                case Codec.FLAC:
+                case Codec.ALAC:
+                case Codec.WAVPACK:
+                    return Quality.FLAC;
+                case Codec.AAC:
+                    return Quality.M4B;
+                case Codec.MP1:
+                case Codec.MP2:
+                case Codec.MP3VBR:
+                case Codec.MP3CBR:
+                case Codec.APE:
+                case Codec.WMA:
+                case Codec.WAV:
+                case Codec.AACVBR:
+                case Codec.OGG:
+                case Codec.OPUS:
+                    return Quality.MP3;
+                default:
+                    return Quality.Unknown;
+            }
         }
 
         private static Quality FindQuality(Codec codec)

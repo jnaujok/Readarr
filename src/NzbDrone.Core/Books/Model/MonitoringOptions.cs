@@ -8,6 +8,7 @@ namespace NzbDrone.Core.Books
         public MonitoringOptions()
         {
             BooksToMonitor = new List<string>();
+            Monitor = MonitorTypes.Unknown;
         }
 
         public MonitorTypes Monitor { get; set; }

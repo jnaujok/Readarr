@@ -42,7 +42,14 @@ namespace Readarr.Api.V1.Bookshelf
                     author.MonitorNewItems = request.MonitorNewItems.Value;
                 }
 
-                _bookMonitoredService.SetBookMonitoredStatus(author, request.MonitoringOptions);
+                if (request.MonitoringOptions != null)
+                {
+                    _bookMonitoredService.SetBookMonitoredStatus(author, request.MonitoringOptions);
+                }
+                else
+                {
+                    _authorService.UpdateAuthor(author);
+                }
             }
 
             return Accepted(request);
