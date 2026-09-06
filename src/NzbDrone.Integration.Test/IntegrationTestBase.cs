@@ -26,7 +26,6 @@ using Readarr.Api.V1.RootFolders;
 using Readarr.Api.V1.System.Tasks;
 using Readarr.Api.V1.Tags;
 using RestSharp;
-using RestSharp.Serializers.SystemTextJson;
 
 namespace NzbDrone.Integration.Test
 {
