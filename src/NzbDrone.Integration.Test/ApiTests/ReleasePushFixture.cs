@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Net;
 using FluentAssertions;
 using NUnit.Framework;
-using NzbDrone.Integration.Test.Client;
 using Readarr.Api.V1.Indexers;
 using RestSharp;
 
