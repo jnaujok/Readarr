@@ -8,6 +8,8 @@ This repository is a **major rewrite of [Readarr](https://github.com/Readarr/Rea
 
 It is still Readarr: authors, books, editions, quality profiles, download clients, and Calibre. It is not a new metadata product and not an Open Library / Hardcover rewrite. The default metadata provider is [rreading-glasses](https://github.com/blampe/rreading-glasses) at `https://api.bookinfo.pro`. Override that under **Settings → Development**, or point at a self-hosted instance or Hardcover (`https://hardcover.bookinfo.pro`).
 
+**User guide:** open [`docs/user-guide/index.html`](docs/user-guide/index.html) in a browser (no build step). It covers metadata, wanted formats, naming, unmapped files, and the settings that changed in this rewrite.
+
 ```mermaid
 flowchart LR
     subgraph sources [Sources]
@@ -43,17 +45,22 @@ flowchart LR
 - Targets **.NET 10 LTS** instead of the retired Servarr runtime.
 - Defaults metadata to **rreading-glasses** (`https://api.bookinfo.pro`) instead of the dead upstream metadata service.
 - Closes a large set of upstream stability bugs (queue handling, import/upgrade, Calibre null paths, extra-file matching, search/query, edition selection).
-- Adds long-requested naming and library features: token fallbacks `{Token|fallback}`, `{Book TitleNoEdition}`, padded `{Book SeriesPosition:00}`, `{Isbn}` / `{Asin}` / `{Narrator}`, omit-author-folder on rename, edition sync onto book files, optional automatic edition switching on add, author-monitored book filters, and bulk map of unmapped files.
+- Collects **ebook, PDF, and audiobook** copies of the same title independently (quality profile **Wanted Formats**, with a per-book override).
+- Adds naming and library features: token fallbacks `{Token|fallback}`, `{Book TitleNoEdition}`, padded `{Book SeriesPosition:00}`, `{Isbn}` / `{Asin}` / `{Narrator}`, omit-author-folder on rename, edition sync onto book files, optional automatic edition switching on add, author-monitored book filters, and bulk map of unmapped files.
 
 The original Servarr retirement notice still applies to [Readarr/Readarr](https://github.com/Readarr/Readarr). This fork is the continuation.
 
 ## Features
 
-Readarr watches RSS feeds for books from authors you follow, then grabs, sorts, and renames them. Quality profiles can collect ebooks, PDFs, and audiobooks as independent copies of the same title, with a per-book override.
+Readarr watches RSS feeds for books from authors you follow, then grabs, sorts, and renames them.
 
-- Automatic quality upgrades (for example PDF → AZW3)
+### Wanted formats
+
+A quality profile can collect **ebooks**, **PDFs**, and **audiobooks** as separate copies of the same title. An EPUB does not count as a PDF or an audiobook. Set this under **Settings → Profiles → Wanted Formats**. Override it on one book from the book edit dialog (**Override wanted formats for this book**). Leave the profile boxes unchecked to keep the original behaviour, where any allowed file completes the book. Details: [Wanted formats](docs/user-guide/library/wanted-formats.html).
+
+- Automatic quality upgrades *inside* a format (for example MOBI → EPUB → AZW3, or MP3 → M4B → FLAC)
 - Windows, Linux, macOS, and Raspberry Pi
-- Library scan for missing books
+- Library scan for missing books (including missing format copies)
 - Failed-download handling with automatic retry of another release
 - Manual search so you can pick a release or see why one was skipped
 - Quality profiles and custom formats
@@ -110,7 +117,7 @@ House style matches the original *arr stack: `NzbDrone.*` namespaces, NUnit, Flu
 - UI: `frontend/`
 - Coverage gate for new slices: Coverlet ≥ 80%
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the original contribution notes.
+Operator documentation lives in [`docs/user-guide/`](docs/user-guide/index.html). See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution notes.
 
 ## Lineage
 

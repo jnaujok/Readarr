@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File naming — Readarr user guide</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-page="settings/naming.html">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="app-header">
+    <img src="../assets/readarr-mark.png" alt="">
+    <a href="../index.html">Readarr</a>
+    <span class="tag">User guide</span>
+    <button class="nav-toggle" id="nav-toggle" type="button">Menu</button>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="guide-nav" aria-label="Guide"></nav>
+    <main id="content">
+      <p class="breadcrumb"><a href="../index.html">User guide</a> / <a href="index.html">Settings</a> / File naming</p>
+      <h1>File naming</h1>
+      <p>Open <strong>Settings</strong> → <strong>Media Management</strong> and edit the naming format. The naming token picker includes the tokens below (examples are from the picker).</p>
+
+      <h2>Fallbacks</h2>
+      <p>Any token can take a fallback after a pipe. If the token is empty, Readarr uses the fallback text. Example from the picker: <code>{Book Series|Standalone}</code> → <code>Standalone</code> when the book is not in a series.</p>
+
+      <h2>Book tokens added in this rewrite</h2>
+      <table>
+        <thead><tr><th>Token</th><th>Picker example</th></tr></thead>
+        <tbody>
+          <tr><td><code>{Book TitleNoEdition}</code></td><td>The Book's Title!: Subtitle!</td></tr>
+          <tr><td><code>{Book CleanTitleNoEdition}</code></td><td>The Books Title!: Subtitle</td></tr>
+          <tr><td><code>{Book SeriesPosition:00}</code></td><td>01</td></tr>
+          <tr><td><code>{Isbn}</code></td><td>9781234567890</td></tr>
+          <tr><td><code>{Asin}</code></td><td>B00EXAMPLE</td></tr>
+          <tr><td><code>{Narrator}</code></td><td>Jane Doe</td></tr>
+        </tbody>
+      </table>
+      <p><code>{Narrator}</code> comes from audio tags when a <code>NARRATOR</code> field is present (ID3, Xiph, or iTunes).</p>
+
+      <div class="pager">
+        <a href="quality-profiles.html">← Quality profiles</a>
+        <a href="media-management.html">Next: Media management →</a>
+      </div>
+      <footer class="page-foot">Last updated 6 September 2026.</footer>
+    </main>
+  </div>
+  <script src="../nav.js"></script>
+</body>
+</html>

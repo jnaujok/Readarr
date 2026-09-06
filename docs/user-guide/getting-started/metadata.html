@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metadata source — Readarr user guide</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-page="getting-started/metadata.html">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="app-header">
+    <img src="../assets/readarr-mark.png" alt="">
+    <a href="../index.html">Readarr</a>
+    <span class="tag">User guide</span>
+    <button class="nav-toggle" id="nav-toggle" type="button">Menu</button>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="guide-nav" aria-label="Guide"></nav>
+    <main id="content">
+      <p class="breadcrumb"><a href="../index.html">User guide</a> / <a href="index.html">Getting started</a> / Metadata</p>
+      <h1>Metadata source</h1>
+      <p>Author and book metadata does not come from the retired Servarr API. The default provider is rreading-glasses.</p>
+
+      <h2>Change the provider</h2>
+      <ol class="steps">
+        <li>Open <strong>Settings</strong> → <strong>Development</strong>.</li>
+        <li>In the <strong>Metadata Provider Source</strong> fieldset, set <strong>Metadata Source</strong>.</li>
+        <li>Leave the field blank to use <code>https://api.bookinfo.pro</code>.</li>
+        <li>To use Hardcover, enter <code>https://hardcover.bookinfo.pro</code>.</li>
+        <li>To use a self-hosted rreading-glasses instance, enter that URL. Do not append <code>/v1</code>.</li>
+      </ol>
+      <p>Help text on the field: “Override the metadata provider URL. Leave blank to use rreading-glasses at https://api.bookinfo.pro. Self-hosted instances and Hardcover (https://hardcover.bookinfo.pro) are also supported.”</p>
+
+      <div class="pager">
+        <a href="index.html">← Start here</a>
+        <a href="../library/index.html">Next: Library →</a>
+      </div>
+      <footer class="page-foot">Last updated 6 September 2026.</footer>
+    </main>
+  </div>
+  <script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Start here — Readarr user guide</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-page="getting-started/index.html">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="app-header">
+    <img src="../assets/readarr-mark.png" alt="">
+    <a href="../index.html">Readarr</a>
+    <span class="tag">User guide</span>
+    <button class="nav-toggle" id="nav-toggle" type="button">Menu</button>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="guide-nav" aria-label="Guide"></nav>
+    <main id="content">
+      <p class="breadcrumb"><a href="../index.html">User guide</a> / Getting started</p>
+      <h1>Start here</h1>
+      <p>Use this page after you have a Readarr process running. The default web UI is on port 8787 unless you changed it.</p>
+
+      <h2>First-run jobs</h2>
+      <ol class="steps">
+        <li>Open Readarr in a browser.</li>
+        <li>Set authentication under <strong>Settings</strong> → <strong>General</strong> if the instance is reachable from other machines.</li>
+        <li>Confirm the metadata URL under <strong>Settings</strong> → <strong>Development</strong>. Leave it blank to use rreading-glasses at <code>https://api.bookinfo.pro</code>.</li>
+        <li>Add a root folder under <strong>Settings</strong> → <strong>Media Management</strong>.</li>
+        <li>Review <strong>Settings</strong> → <strong>Profiles</strong>. Choose whether each quality profile should collect ebooks, PDFs, and audiobooks independently. See <a href="../library/wanted-formats.html">Wanted formats</a>.</li>
+        <li>Add indexers and download clients under <strong>Settings</strong>.</li>
+        <li>Add authors from <strong>Library</strong> → <strong>Add New</strong>.</li>
+      </ol>
+
+      <h2>Build from source</h2>
+      <p>On a development machine with the .NET 10 SDK:</p>
+      <pre><code>export PATH="$HOME/.dotnet:$PATH"
+dotnet build src/Readarr.sln -c Release</code></pre>
+      <p>The default git branch is <code>develop</code>.</p>
+
+      <div class="pager">
+        <a href="../index.html">← Home</a>
+        <a href="metadata.html">Next: Metadata source →</a>
+      </div>
+      <footer class="page-foot">Last updated 6 September 2026.</footer>
+    </main>
+  </div>
+  <script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wanted formats — Readarr user guide</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-page="library/wanted-formats.html">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="app-header">
+    <img src="../assets/readarr-mark.png" alt="">
+    <a href="../index.html">Readarr</a>
+    <span class="tag">User guide</span>
+    <button class="nav-toggle" id="nav-toggle" type="button">Menu</button>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="guide-nav" aria-label="Guide"></nav>
+    <main id="content">
+      <p class="breadcrumb"><a href="../index.html">User guide</a> / <a href="index.html">Library</a> / Wanted formats</p>
+      <h1>Wanted formats</h1>
+      <p>A title can exist in your library as an ebook, a PDF, and an audiobook at the same time. Each of those is a separate collected copy. An EPUB does not count as a PDF or an audiobook.</p>
+
+      <h2>What each box means</h2>
+      <table>
+        <thead><tr><th>Label in the UI</th><th>Satisfied by</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ebooks (EPUB, AZW3, MOBI)</strong></td><td>EPUB, AZW3, or MOBI. Upgrades still apply inside this group (for example MOBI → EPUB → AZW3).</td></tr>
+          <tr><td><strong>PDFs</strong></td><td>A PDF file.</td></tr>
+          <tr><td><strong>Audiobooks</strong></td><td>MP3, M4B, or FLAC. Upgrades still apply inside this group.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Set the default on a quality profile</h2>
+      <ol class="steps">
+        <li>Open <strong>Settings</strong> → <strong>Profiles</strong>.</li>
+        <li>Open a quality profile (or add one).</li>
+        <li>Under <strong>Wanted Formats</strong>, check the copies you want for authors that use this profile.</li>
+        <li>Help text: “Collect each selected format independently. An EPUB will not count as a PDF or audiobook. Leave all unchecked to keep the original behaviour where any allowed file completes the book.”</li>
+        <li>Save the profile.</li>
+      </ol>
+      <p>Leave every box unchecked if you want the old behaviour: one allowed file completes the book.</p>
+      <p>Allowed qualities on the same profile still control what Readarr will grab. Check <strong>PDFs</strong> only if PDF is also allowed in the quality list. Check <strong>Audiobooks</strong> only if an audio quality is allowed.</p>
+
+      <h2>Override one book</h2>
+      <ol class="steps">
+        <li>Open the book and choose edit.</li>
+        <li>Turn on <strong>Override wanted formats for this book</strong>. Help text: “Use a different set of collected formats than the author's quality profile.”</li>
+        <li>Under <strong>Wanted Formats</strong>, check <strong>Ebooks (EPUB, AZW3, MOBI)</strong>, <strong>PDFs</strong>, and/or <strong>Audiobooks</strong>.</li>
+        <li>Save. Turn the override off to inherit the author’s profile again.</li>
+      </ol>
+
+      <h2>How missing search behaves</h2>
+      <p>If a profile or book asks for more than one format, <strong>Wanted</strong> → <strong>Missing</strong> lists the book until every selected copy is on disk. RSS and search will still grab an audiobook when you already have an EPUB, because those files are different format kinds.</p>
+
+      <div class="pager">
+        <a href="add-authors-and-books.html">← Add authors and books</a>
+        <a href="unmapped-files.html">Next: Unmapped files →</a>
+      </div>
+      <footer class="page-foot">Last updated 6 September 2026.</footer>
+    </main>
+  </div>
+  <script src="../nav.js"></script>
+</body>
+</html>

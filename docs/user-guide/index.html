@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Readarr user guide</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="index.html">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="app-header">
+    <img src="assets/readarr-mark.png" alt="">
+    <a href="index.html">Readarr</a>
+    <span class="tag">User guide</span>
+    <button class="nav-toggle" id="nav-toggle" type="button">Menu</button>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="guide-nav" aria-label="Guide"></nav>
+    <main id="content">
+      <p class="breadcrumb">User guide</p>
+      <h1>Readarr user guide</h1>
+      <p>Readarr is an ebook and audiobook collection manager for Usenet and BitTorrent. It watches authors you follow, grabs releases, and sorts files into your library. This fork is a rewrite of the retired Servarr project on .NET 10. Metadata comes from <a href="https://github.com/blampe/rreading-glasses">rreading-glasses</a> by default.</p>
+      <p>This guide is for operators of a Readarr instance. Labels match the English UI.</p>
+
+      <div class="card-grid">
+        <a class="card" href="getting-started/index.html">
+          <strong>Getting started</strong>
+          Install, first run, and the metadata source.
+        </a>
+        <a class="card" href="library/wanted-formats.html">
+          <strong>Wanted formats</strong>
+          Keep an EPUB, a PDF, and an audiobook of the same title.
+        </a>
+        <a class="card" href="library/add-authors-and-books.html">
+          <strong>Add authors and books</strong>
+          Search, monitor, and automatic edition switching.
+        </a>
+        <a class="card" href="settings/quality-profiles.html">
+          <strong>Quality profiles</strong>
+          Allowed qualities, upgrades, and wanted formats.
+        </a>
+      </div>
+
+      <h2>What this fork changes</h2>
+      <ul>
+        <li>Runs on .NET 10.</li>
+        <li>Uses rreading-glasses (<code>https://api.bookinfo.pro</code>) instead of the retired Servarr metadata API.</li>
+        <li>Collects ebook, PDF, and audiobook copies independently when you ask for them.</li>
+        <li>Adds naming tokens, unmapped-file bulk mapping, and several library fixes from the archived Readarr issue list.</li>
+      </ul>
+
+      <div class="note">
+        <strong>About this guide.</strong> Procedures use the labels in the Readarr UI source (English). Screenshots were not taken from a running instance in this pass.
+      </div>
+
+      <div class="pager">
+        <span></span>
+        <a href="getting-started/index.html">Next: Start here →</a>
+      </div>
+      <footer class="page-foot">Last updated 6 September 2026.</footer>
+    </main>
+  </div>
+  <script src="nav.js"></script>
+</body>
+</html>
