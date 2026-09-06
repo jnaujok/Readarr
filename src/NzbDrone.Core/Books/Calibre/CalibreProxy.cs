@@ -74,10 +74,36 @@ namespace NzbDrone.Core.Books.Calibre
 
         public static string GetOriginalFormat(Dictionary<string, CalibreBookFormat> formats)
         {
+            if (formats == null)
+            {
+                return null;
+            }
+
             return formats
-                .Where(x => MediaFileExtensions.TextExtensions.Contains("." + x.Key))
+                .Where(x => x.Value != null && x.Value.Path.IsNotNullOrWhiteSpace())
+                .Where(x => MediaFileExtensions.TextExtensions.Contains("." + x.Key) ||
+                            MediaFileExtensions.AudioExtensions.Contains("." + x.Key))
                 .OrderBy(f => f.Value.LastModified)
-                .FirstOrDefault().Value?.Path;
+                .Select(f => f.Value.Path)
+                .FirstOrDefault();
+        }
+
+        private void RemapFormatPaths(CalibreBook book, CalibreSettings settings)
+        {
+            if (book?.Formats == null)
+            {
+                return;
+            }
+
+            foreach (var format in book.Formats.Values)
+            {
+                if (format == null || format.Path.IsNullOrWhiteSpace())
+                {
+                    continue;
+                }
+
+                format.Path = _pathMapper.RemapRemoteToLocal(settings.Host, new OsPath(format.Path)).FullPath;
+            }
         }
 
         public BookFile AddAndConvert(BookFile file, CalibreSettings settings)
@@ -409,10 +435,7 @@ namespace NzbDrone.Core.Books.Calibre
                 var request = builder.Build();
                 var book = _httpClient.Get<CalibreBook>(request).Resource;
 
-                foreach (var format in book.Formats.Values)
-                {
-                    format.Path = _pathMapper.RemapRemoteToLocal(settings.Host, new OsPath(format.Path)).FullPath;
-                }
+                RemapFormatPaths(book, settings);
 
                 return book;
             }
@@ -437,10 +460,7 @@ namespace NzbDrone.Core.Books.Calibre
 
                 foreach (var book in result)
                 {
-                    foreach (var format in book.Formats.Values)
-                    {
-                        format.Path = _pathMapper.RemapRemoteToLocal(settings.Host, new OsPath(format.Path)).FullPath;
-                    }
+                    RemapFormatPaths(book, settings);
                 }
 
                 return result;

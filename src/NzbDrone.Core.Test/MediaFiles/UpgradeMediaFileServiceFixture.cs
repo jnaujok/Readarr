@@ -155,6 +155,54 @@ namespace NzbDrone.Core.Test.MediaFiles
         }
 
         [Test]
+        public void should_keep_existing_ebook_when_importing_different_format()
+        {
+            _trackFile.Quality = new QualityModel(Quality.AZW3);
+            _trackFile.Path = Path.Combine(_rootPath, "book.azw3");
+
+            _localTrack.Book = Builder<Book>.CreateNew()
+                .With(e => e.BookFiles = new LazyLoaded<List<BookFile>>(
+                    new List<BookFile>
+                    {
+                        new BookFile
+                        {
+                            Id = 1,
+                            Path = Path.Combine(_rootPath, "book.epub"),
+                            Quality = new QualityModel(Quality.EPUB)
+                        }
+                    }))
+                .Build();
+
+            Subject.UpgradeBookFile(_trackFile, _localTrack);
+
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(Path.Combine(_rootPath, "book.epub"), It.IsAny<string>()), Times.Never());
+        }
+
+        [Test]
+        public void should_keep_kepub_when_importing_epub()
+        {
+            _trackFile.Quality = new QualityModel(Quality.EPUB);
+            _trackFile.Path = Path.Combine(_rootPath, "book.epub");
+
+            _localTrack.Book = Builder<Book>.CreateNew()
+                .With(e => e.BookFiles = new LazyLoaded<List<BookFile>>(
+                    new List<BookFile>
+                    {
+                        new BookFile
+                        {
+                            Id = 1,
+                            Path = Path.Combine(_rootPath, "book.kepub"),
+                            Quality = new QualityModel(Quality.EPUB)
+                        }
+                    }))
+                .Build();
+
+            Subject.UpgradeBookFile(_trackFile, _localTrack);
+
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(Path.Combine(_rootPath, "book.kepub"), It.IsAny<string>()), Times.Never());
+        }
+
+        [Test]
         public void should_not_recycle_different_audiobook_part()
         {
             _trackFile.Quality = new QualityModel(Quality.M4B);

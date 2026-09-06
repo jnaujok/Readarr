@@ -119,6 +119,13 @@ namespace Readarr.Api.V1.Indexers
                     remoteBook.Books = books;
                 }
 
+                if (remoteBook.Books.Empty() && release.BookId.HasValue)
+                {
+                    var book = _bookService.GetBook(release.BookId.Value);
+                    remoteBook.Books = new List<Book> { book };
+                    remoteBook.Author ??= _authorService.GetAuthor(book.AuthorId);
+                }
+
                 if (remoteBook.Books.Empty())
                 {
                     throw new NzbDroneClientException(HttpStatusCode.NotFound, "Unable to parse books in the release");

@@ -197,6 +197,8 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
 
             var bestDistance = localBookRelease.Edition != null ? localBookRelease.Distance.NormalizedDistance() : 1.0;
             seenCandidate = false;
+            var bestBookId = localBookRelease.Edition?.Book?.Value?.Id;
+            var ambiguous = false;
 
             foreach (var candidateRelease in candidateReleases)
             {
@@ -212,6 +214,7 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
 
                 var distance = DistanceCalculator.BookDistance(allLocalTracks, release);
                 var currDistance = distance.NormalizedDistance();
+                var candidateBookId = release.Book?.Value?.Id ?? 0;
 
                 rwatch.Stop();
                 _logger.Debug("Release {0} has distance {1} vs best distance {2} [{3}ms]",
@@ -219,17 +222,36 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
                               currDistance,
                               bestDistance,
                               rwatch.ElapsedMilliseconds);
-                if (currDistance < bestDistance)
+                if (currDistance < bestDistance - 0.001)
                 {
                     bestDistance = currDistance;
                     localBookRelease.Distance = distance;
                     localBookRelease.Edition = release;
                     localBookRelease.ExistingTracks = extraTracks;
+                    bestBookId = candidateBookId;
+                    ambiguous = false;
                     if (currDistance == 0.0)
                     {
                         break;
                     }
                 }
+                else if (Math.Abs(currDistance - bestDistance) <= 0.001 &&
+                         bestBookId.HasValue &&
+                         candidateBookId != bestBookId.Value)
+                {
+                    _logger.Debug("Ambiguous match between book {0} and {1} (distance {2})",
+                                  bestBookId,
+                                  candidateBookId,
+                                  currDistance);
+                    ambiguous = true;
+                }
+            }
+
+            if (ambiguous)
+            {
+                _logger.Warn("Multiple books matched equally; leaving unmatched for manual import");
+                localBookRelease.Edition = null;
+                localBookRelease.ExistingTracks = new List<LocalBook>();
             }
 
             watch.Stop();

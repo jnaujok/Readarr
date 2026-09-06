@@ -247,6 +247,28 @@ namespace NzbDrone.Core.ImportLists
             {
                 _logger.Debug("{0} [{1}] Rejected, Book Exists in DB.  Ensuring Book and Author monitored.", report.EditionGoodreadsId, report.Book);
 
+                if (importList.ShouldMonitor == ImportListMonitorType.SpecificBook)
+                {
+                    if (!existingBook.Monitored)
+                    {
+                        _bookService.SetBookMonitored(existingBook.Id, true);
+                    }
+
+                    var listedAuthor = existingBook.Author.Value;
+                    if (listedAuthor != null && !listedAuthor.Monitored)
+                    {
+                        listedAuthor.Monitored = true;
+                        _authorService.UpdateAuthor(listedAuthor);
+                    }
+
+                    if (importList.ShouldSearch)
+                    {
+                        _commandQueueManager.Push(new BookSearchCommand(new List<int> { existingBook.Id }));
+                    }
+
+                    return;
+                }
+
                 if (importList.ShouldMonitorExisting && importList.ShouldMonitor != ImportListMonitorType.None)
                 {
                     if (!existingBook.Monitored)
