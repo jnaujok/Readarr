@@ -42,6 +42,7 @@ WORKDIR /src
 COPY build.sh LICENSE.md global.json .editorconfig ./
 COPY src ./src
 COPY distribution ./distribution
+COPY Logo ./Logo
 RUN --mount=type=cache,target=/root/.nuget/packages \
     chmod +x build.sh \
     && ./build.sh --backend -r linux-x64 -f net10.0
