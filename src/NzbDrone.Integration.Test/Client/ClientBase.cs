@@ -65,12 +65,7 @@ namespace NzbDrone.Integration.Test.Client
         {
             var content = Execute(request, statusCode);
 
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                return default;
-            }
-
-            return STJson.Deserialize<T>(content);
+            return Json.Deserialize<T>(content);
         }
 
         private static void AssertDisableCache(IRestResponse response)
