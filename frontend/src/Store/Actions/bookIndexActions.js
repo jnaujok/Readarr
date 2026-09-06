@@ -206,6 +206,12 @@ export const defaultState = {
       valueType: filterBuilderValueTypes.BOOL
     },
     {
+      name: 'authorMonitored',
+      label: 'Author Monitored',
+      type: filterBuilderTypes.EXACT,
+      valueType: filterBuilderValueTypes.BOOL
+    },
+    {
       name: 'anyEditionOk',
       label: 'Automatic Release Switching',
       type: filterBuilderTypes.EXACT,

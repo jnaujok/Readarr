@@ -12,6 +12,7 @@ namespace Readarr.Api.V1.Config
         public int RecycleBinCleanupDays { get; set; }
         public ProperDownloadTypes DownloadPropersAndRepacks { get; set; }
         public bool CreateEmptyAuthorFolders { get; set; }
+        public bool OmitAuthorFolderOnRename { get; set; }
         public bool DeleteEmptyFolders { get; set; }
         public FileDateType FileDate { get; set; }
         public bool WatchLibraryForChanges { get; set; }
@@ -40,6 +41,7 @@ namespace Readarr.Api.V1.Config
                 RecycleBinCleanupDays = model.RecycleBinCleanupDays,
                 DownloadPropersAndRepacks = model.DownloadPropersAndRepacks,
                 CreateEmptyAuthorFolders = model.CreateEmptyAuthorFolders,
+                OmitAuthorFolderOnRename = model.OmitAuthorFolderOnRename,
                 DeleteEmptyFolders = model.DeleteEmptyFolders,
                 FileDate = model.FileDate,
                 WatchLibraryForChanges = model.WatchLibraryForChanges,

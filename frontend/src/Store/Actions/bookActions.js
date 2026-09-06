@@ -52,6 +52,28 @@ export const filters = [
     ]
   },
   {
+    key: 'authorMonitored',
+    label: () => translate('AuthorMonitored'),
+    filters: [
+      {
+        key: 'authorMonitored',
+        value: true,
+        type: filterTypes.EQUAL
+      }
+    ]
+  },
+  {
+    key: 'authorUnmonitored',
+    label: () => translate('AuthorUnmonitored'),
+    filters: [
+      {
+        key: 'authorMonitored',
+        value: false,
+        type: filterTypes.EQUAL
+      }
+    ]
+  },
+  {
     key: 'missing',
     label: () => translate('Missing'),
     filters: [
@@ -100,6 +122,13 @@ export const filterPredicates = {
     const { statistics = {} } = item;
 
     return !statistics.hasOwnProperty('bookFileCount') || statistics.bookFileCount === 0;
+  },
+
+  authorMonitored: function(item, filterValue, type) {
+    const predicate = filterTypePredicates[type];
+    const monitored = item.author ? item.author.monitored : false;
+
+    return predicate(monitored, filterValue);
   },
 
   releaseDate: function(item, filterValue, type) {

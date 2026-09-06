@@ -73,6 +73,10 @@ const bookTokens = [
 
   { token: '{Book CleanTitleNoSub}', example: 'The Books Title!' },
 
+  { token: '{Book TitleNoEdition}', example: 'The Book\'s Title!: Subtitle!' },
+
+  { token: '{Book CleanTitleNoEdition}', example: 'The Books Title!: Subtitle' },
+
   { token: '{Book Subtitle}', example: 'Subtitle!' },
 
   { token: '{Book SubtitleThe}', example: 'Subtitle!, The' },
@@ -84,8 +88,15 @@ const bookTokens = [
   { token: '{Book Series}', example: 'Series Title' },
 
   { token: '{Book SeriesPosition}', example: '1' },
+  { token: '{Book SeriesPosition:00}', example: '01' },
 
   { token: '{Book SeriesTitle}', example: 'Series Title #1' },
+
+  { token: '{Book Series|Standalone}', example: 'Standalone' },
+
+  { token: '{Isbn}', example: '9781234567890' },
+
+  { token: '{Asin}', example: 'B00EXAMPLE' },
 
   { token: '{PartNumber:0}', example: '2' },
   { token: '{PartNumber:00}', example: '02' },
@@ -114,7 +125,8 @@ const mediaInfoTokens = [
 
 const otherTokens = [
   { token: '{Release Group}', example: 'Rls Grp' },
-  { token: '{Custom Formats}', example: 'iNTERNAL' }
+  { token: '{Custom Formats}', example: 'iNTERNAL' },
+  { token: '{Narrator}', example: 'Jane Doe' }
 ];
 
 const originalTokens = [

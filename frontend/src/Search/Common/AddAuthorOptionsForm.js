@@ -41,6 +41,7 @@ class AddAuthorOptionsForm extends Component {
       showMetadataProfile,
       folder,
       tags,
+      anyEditionOk,
       isWindows,
       onInputChange,
       ...otherProps
@@ -166,6 +167,20 @@ class AddAuthorOptionsForm extends Component {
 
         <FormGroup>
           <FormLabel>
+            {translate('AutomaticallySwitchEdition')}
+          </FormLabel>
+
+          <FormInputGroup
+            type={inputTypes.CHECK}
+            name="anyEditionOk"
+            helpText={translate('AnyEditionOkHelpText')}
+            onChange={onInputChange}
+            {...anyEditionOk}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <FormLabel>
             {translate('Tags')}
           </FormLabel>
 
@@ -192,12 +207,14 @@ AddAuthorOptionsForm.propTypes = {
   includeSpecificBookMonitor: PropTypes.bool.isRequired,
   folder: PropTypes.string.isRequired,
   tags: PropTypes.object.isRequired,
+  anyEditionOk: PropTypes.object,
   isWindows: PropTypes.bool.isRequired,
   onInputChange: PropTypes.func.isRequired
 };
 
 AddAuthorOptionsForm.defaultProps = {
-  includeSpecificBookMonitor: false
+  includeSpecificBookMonitor: false,
+  anyEditionOk: { value: true }
 };
 
 export default AddAuthorOptionsForm;

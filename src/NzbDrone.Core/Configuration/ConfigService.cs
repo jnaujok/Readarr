@@ -158,6 +158,13 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("CreateEmptyAuthorFolders", value); }
         }
 
+        public bool OmitAuthorFolderOnRename
+        {
+            get { return GetValueBoolean("OmitAuthorFolderOnRename", false); }
+
+            set { SetValue("OmitAuthorFolderOnRename", value); }
+        }
+
         public bool DeleteEmptyFolders
         {
             get { return GetValueBoolean("DeleteEmptyFolders", false); }

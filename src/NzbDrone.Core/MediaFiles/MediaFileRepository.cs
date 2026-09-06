@@ -20,6 +20,7 @@ namespace NzbDrone.Core.MediaFiles
         BookFile GetFileWithPath(string path);
         void DeleteFilesByBook(int bookId);
         void UnlinkFilesByBook(int bookId);
+        void SetEditionForBook(int bookId, int editionId);
     }
 
     public class MediaFileRepository : BasicRepository<BookFile>, IMediaFileRepository
@@ -99,6 +100,13 @@ namespace NzbDrone.Core.MediaFiles
         {
             var files = GetFilesByBook(bookId);
             files.ForEach(x => x.EditionId = 0);
+            SetFields(files, f => f.EditionId);
+        }
+
+        public void SetEditionForBook(int bookId, int editionId)
+        {
+            var files = GetFilesByBook(bookId);
+            files.ForEach(x => x.EditionId = editionId);
             SetFields(files, f => f.EditionId);
         }
 

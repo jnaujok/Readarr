@@ -119,6 +119,24 @@ class MediaManagement extends Component {
                         size={sizes.MEDIUM}
                       >
                         <FormLabel>
+                          {translate('OmitAuthorFolderOnRename')}
+                        </FormLabel>
+
+                        <FormInputGroup
+                          type={inputTypes.CHECK}
+                          name="omitAuthorFolderOnRename"
+                          helpText={translate('OmitAuthorFolderOnRenameHelpText')}
+                          onChange={onInputChange}
+                          {...settings.omitAuthorFolderOnRename}
+                        />
+                      </FormGroup>
+
+                      <FormGroup
+                        advancedSettings={advancedSettings}
+                        isAdvanced={true}
+                        size={sizes.MEDIUM}
+                      >
+                        <FormLabel>
                           {translate('DeleteEmptyFolders')}
                         </FormLabel>
 

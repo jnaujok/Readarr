@@ -272,6 +272,11 @@ namespace NzbDrone.Core.Books
             foreach (var book in children.Added)
             {
                 book.Monitored = _monitorNewBookService.ShouldMonitorNewBook(book, children.UpToDate, entity.MonitorNewItems);
+
+                if (entity.AddOptions != null)
+                {
+                    book.AnyEditionOk = entity.AddOptions.AnyEditionOk;
+                }
             }
         }
 

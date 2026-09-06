@@ -1,96 +1,124 @@
-# Announcement: Retirement of Readarr
-
-We would like to announce that the [Readarr project](<https://github.com/Readarr/Readarr>) has been retired. This difficult decision was made due to a combination of factors: the project's metadata has become unusable, we no longer have the time to remake or repair it, and the community effort to transition to using Open Library as the source has stalled without much progress.
-
-This fork uses [rreading-glasses](https://github.com/blampe/rreading-glasses) as the default metadata provider (`https://api.bookinfo.pro`). Override it under **Settings → Development**, or point at a self-hosted instance or Hardcover (`https://hardcover.bookinfo.pro`).
-
-Without anyone to take over Readarr development, we expect it to wither away, so we still encourage you to seek alternatives to Readarr.
-
-## Key Points:
-- **Effective Immediately**: The retirement takes effect immediately. Please stay tuned for any possible further communications.
-- **Support Window**: We will provide support during a brief transition period to help with troubleshooting non metadata related issues.
-- **Alternative Solutions**: Users are encouraged to explore and adopt any other possible solutions as alternatives to Readarr.
-- **Opportunities for Revival**: We are open to someone taking over and revitalizing the project. If you are interested, please get in touch.
-- **Gratitude**: We extend our deepest gratitude to all the contributors and community members who supported Readarr over the years.
-
-Thank you for being part of the Readarr journey. For any inquiries or assistance during this transition, please contact our team.
-
-Sincerely,  
-The Servarr Team
-
 # Readarr
 
-[![Build Status](https://dev.azure.com/Readarr/Readarr/_apis/build/status/Readarr.Readarr?branchName=develop)](https://dev.azure.com/Readarr/Readarr/_build/latest?definitionId=1&branchName=develop)
-[![Translated](https://translate.servarr.com/widgets/servarr/-/readarr/svg-badge.svg)](https://translate.servarr.com/engage/readarr/?utm_source=widget)
-[![Docker Pulls](https://img.shields.io/docker/pulls/hotio/readarr)](https://wiki.servarr.com/readarr/installation#docker)
-[![Donors on Open Collective](https://opencollective.com/Readarr/backers/badge.svg)](#backers)
-[![Sponsors on Open Collective](https://opencollective.com/Readarr/sponsors/badge.svg)](#sponsors)
-[![Mega Sponsors on Open Collective](https://opencollective.com/Readarr/megasponsors/badge.svg)](#mega-sponsors)
+[![CI](https://github.com/jnaujok/Readarr/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/jnaujok/Readarr/actions/workflows/ci.yml)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/download)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](http://www.gnu.org/licenses/gpl.html)
 
-### Readarr is currently in beta testing and is generally still in a work in progress. Features may be broken, incomplete, or cause spontaneous combustion
+This repository is a **major rewrite of [Readarr](https://github.com/Readarr/Readarr)** using [Grok](https://x.ai). The original Servarr project was retired after its metadata pipeline became unusable. This fork keeps the Readarr product model — ebook and audiobook collection management for Usenet and BitTorrent — and rebuilds it to run on **.NET 10**, with the bugs and naming gaps that accumulated while the upstream project was frozen.
 
-Readarr is an ebook and audiobook collection manager for Usenet and BitTorrent users. It can monitor multiple RSS feeds for new books from your favorite authors and will grab, sort, and rename them.
-Note that only one type of a given book is supported. If you want both an audiobook and ebook of a given book you will need multiple instances.
+It is still Readarr: authors, books, editions, quality profiles, download clients, and Calibre. It is not a new metadata product and not an Open Library / Hardcover rewrite. The default metadata provider is [rreading-glasses](https://github.com/blampe/rreading-glasses) at `https://api.bookinfo.pro`. Override that under **Settings → Development**, or point at a self-hosted instance or Hardcover (`https://hardcover.bookinfo.pro`).
 
-## Major Features Include
+```mermaid
+flowchart LR
+    subgraph sources [Sources]
+        Indexers[Indexers]
+        RSS[RSS feeds]
+        Lists[Import lists]
+    end
 
-* Can watch for better quality of the ebooks and audiobooks you have and do an automatic upgrade. *e.g. from PDF to AZW3*
-* Support for major platforms: Windows, Linux, macOS, Raspberry Pi, etc.
-* Automatically detects new books
-* Can scan your existing library and download any missing books
-* Automatic failed download handling will try another release if one fails
-* Manual search so you can pick any release or to see why a release was not downloaded automatically
-* Advanced customization for profiles, such that Readarr will always download the copy you want
-* Fully configurable book renaming
-* SABnzbd, NZBGet, QBittorrent, Deluge, rTorrent, Transmission, uTorrent, and other download clients are supported and integrated
-* Full integration with Calibre (add to library, conversion) (Requires Calibre Content Server)
-* And a beautiful UI
+    subgraph readarr [Readarr]
+        API[ASP.NET Core API]
+        Core[NzbDrone.Core]
+        DB[(SQLite / PostgreSQL)]
+        UI[React UI]
+    end
 
-## Support
+    subgraph library [Library]
+        Disk[Book files]
+        Calibre[Calibre Content Server]
+    end
 
-[![Wiki](https://img.shields.io/badge/servarr-wiki-181717.svg?maxAge=60)](https://wiki.servarr.com/readarr)
-[![Discord](https://img.shields.io/badge/discord-chat-7289DA.svg?maxAge=60)](https://readarr.com/discord)
+    Indexers --> Core
+    RSS --> Core
+    Lists --> Core
+    UI --> API --> Core
+    Core --> DB
+    Core --> Disk
+    Core --> Calibre
+    Metadata[rreading-glasses] --> Core
+```
 
-Note: GitHub Issues are for Bugs and Feature Requests Only
+## What this rewrite changes
 
-[![GitHub - Bugs and Feature Requests Only](https://img.shields.io/badge/github-issues-red.svg?maxAge=60)](https://github.com/Readarr/Readarr/issues)
+- Targets **.NET 10 LTS** instead of the retired Servarr runtime.
+- Defaults metadata to **rreading-glasses** (`https://api.bookinfo.pro`) instead of the dead upstream metadata service.
+- Closes a large set of upstream stability bugs (queue handling, import/upgrade, Calibre null paths, extra-file matching, search/query, edition selection).
+- Adds long-requested naming and library features: token fallbacks `{Token|fallback}`, `{Book TitleNoEdition}`, padded `{Book SeriesPosition:00}`, `{Isbn}` / `{Asin}` / `{Narrator}`, omit-author-folder on rename, edition sync onto book files, optional automatic edition switching on add, author-monitored book filters, and bulk map of unmapped files.
 
-## Contributors & Developers
+The original Servarr retirement notice still applies to [Readarr/Readarr](https://github.com/Readarr/Readarr). This fork is the continuation.
 
-[API Documentation](https://readarr.com/docs/api/)
+## Features
 
-This project exists thanks to all the people who contribute.
-- [Contribute (GitHub)](CONTRIBUTING.md)
-- [Contribution (Wiki Article)](https://wiki.servarr.com/readarr/contributing)
+Readarr watches RSS feeds for books from authors you follow, then grabs, sorts, and renames them. One format of a given book is supported per instance. If you want both an audiobook and an ebook of the same title, run two instances.
 
-[![Contributors List](https://opencollective.com/Readarr/contributors.svg?width=890&button=false)](https://github.com/Readarr/Readarr/graphs/contributors)
+- Automatic quality upgrades (for example PDF → AZW3)
+- Windows, Linux, macOS, and Raspberry Pi
+- Library scan for missing books
+- Failed-download handling with automatic retry of another release
+- Manual search so you can pick a release or see why one was skipped
+- Quality profiles and custom formats
+- Configurable renaming, including fallback tokens and ISBN/ASIN/narrator
+- SABnzbd, NZBGet, qBittorrent, Deluge, rTorrent, Transmission, uTorrent, and other download clients
+- Calibre Content Server integration (library add and conversion)
+- React UI
 
-## Backers
+## Quick start
 
-Thank you to all our backers! 🙏 [Become a backer](https://opencollective.com/Readarr#backer)
+### Prerequisites
 
-[![Backers List](https://opencollective.com/Readarr/backers.svg?width=890)](https://opencollective.com/Readarr#backer)
+- [.NET SDK 10](https://dotnet.microsoft.com/download)
+- Node.js (for the UI)
+- SQLite (default) or PostgreSQL
 
-## Sponsors
+### Build and run
 
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [Become a sponsor](https://opencollective.com/readarr#sponsor)
+```bash
+export PATH="$HOME/.dotnet:$PATH"
+dotnet build src/Readarr.sln -c Release
+dotnet test src/NzbDrone.Core.Test/NzbDrone.Core.Test.csproj -c Release --filter "FullyQualifiedName!~Integration"
+```
 
-[![Sponsors List](https://opencollective.com/Readarr/sponsors.svg?width=890)](https://opencollective.com/readarr#sponsor)
+The default branch is `develop`.
 
-## Mega Sponsors
+### Metadata
 
-[![Mega Sponsors List](https://opencollective.com/Readarr/tiers/mega-sponsor.svg?width=890)](https://opencollective.com/readarr#mega-sponsor)
+Default: `https://api.bookinfo.pro` (rreading-glasses, no `/v1` suffix).
 
-## DigitalOcean
+Set a different provider under **Settings → Development**, or host your own [rreading-glasses](https://github.com/blampe/rreading-glasses) instance.
 
-This project is also supported by DigitalOcean
-<p>
-  <a href="https://www.digitalocean.com/">
-    <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/SVG/DO_Logo_horizontal_blue.svg" width="201px">
-  </a>
-</p>
+## Architecture
+
+```mermaid
+flowchart TB
+    UI[frontend React] --> API[Readarr.Api.V1]
+    API --> Host[NzbDrone.Host]
+    Host --> Core[NzbDrone.Core]
+    Core --> Books[Authors / Books / Editions]
+    Core --> Media[Import / Rename / Tags]
+    Core --> Index[Indexers / Download clients]
+    Core --> Meta[Metadata proxy]
+    Core --> Store[Datastore]
+```
+
+House style matches the original *arr stack: `NzbDrone.*` namespaces, NUnit, FluentAssertions, Moq, Newtonsoft.Json, DryIoc, and StyleCop. New work stays in that dialect.
+
+## Development
+
+- Solution: `src/Readarr.sln`
+- Unit tests: `src/NzbDrone.Core.Test`
+- API: `src/Readarr.Api.V1`
+- UI: `frontend/`
+- Coverage gate for new slices: Coverlet ≥ 80%
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the original contribution notes.
+
+## Lineage
+
+Readarr was created by the Servarr team as an ebook/audiobook companion to Sonarr, Radarr, and Lidarr. Upstream development stopped when the metadata service failed and the Open Library migration stalled. This Grok-assisted rewrite keeps that product, modernizes the runtime, and continues bug and feature work against the archived [Readarr/Readarr](https://github.com/Readarr/Readarr) issue list.
+
+Thanks to every Servarr contributor who built the original application.
 
 ### License
 
-* [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
-* Copyright 2010-2022
+- [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
+- Copyright 2010-2026

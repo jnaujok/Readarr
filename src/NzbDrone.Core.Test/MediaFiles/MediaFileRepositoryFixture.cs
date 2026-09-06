@@ -134,6 +134,24 @@ namespace NzbDrone.Core.Test.MediaFiles
             files.Should().OnlyContain(c => c.EditionId == _book.Id);
         }
 
+        [Test]
+        public void set_edition_for_book_updates_mapped_files()
+        {
+            VerifyData();
+
+            var newEdition = Builder<Edition>.CreateNew()
+                .With(a => a.Id = 0)
+                .With(a => a.BookId = _book.Id)
+                .With(a => a.ForeignEditionId = "edition-2")
+                .Build();
+            Db.Insert(newEdition);
+
+            Subject.SetEditionForBook(_book.Id, newEdition.Id);
+
+            Subject.GetFilesByBook(_book.Id).Should().OnlyContain(c => c.EditionId == newEdition.Id);
+            Subject.GetUnmappedFiles().Should().HaveCount(5);
+        }
+
         private void VerifyData()
         {
             Db.All<Author>().Should().HaveCount(1);

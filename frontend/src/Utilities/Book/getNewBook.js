@@ -2,7 +2,8 @@ import getNewAuthor from 'Utilities/Author/getNewAuthor';
 
 function getNewBook(book, payload) {
   const {
-    searchForNewBook = false
+    searchForNewBook = false,
+    anyEditionOk = true
   } = payload;
 
   if (!('id' in book.author) || book.author.id === 0) {
@@ -18,6 +19,7 @@ function getNewBook(book, payload) {
     searchForNewBook
   };
   book.monitored = true;
+  book.anyEditionOk = anyEditionOk;
 
   return book;
 }
