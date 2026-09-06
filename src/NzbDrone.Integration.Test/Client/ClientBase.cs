@@ -65,7 +65,7 @@ namespace NzbDrone.Integration.Test.Client
         {
             var content = Execute(request, statusCode);
 
-            return Json.Deserialize<T>(content);
+            return STJson.Deserialize<T>(content);
         }
 
         private static void AssertDisableCache(IRestResponse response)
@@ -112,14 +112,14 @@ namespace NzbDrone.Integration.Test.Client
         public TResource Post(TResource body, HttpStatusCode statusCode = HttpStatusCode.Created)
         {
             var request = BuildRequest();
-            request.AddJsonBody(body);
+            request.AddParameter("application/json", STJson.ToJson(body), ParameterType.RequestBody);
             return Post<TResource>(request, statusCode);
         }
 
         public TResource Put(TResource body, HttpStatusCode statusCode = HttpStatusCode.Accepted)
         {
             var request = BuildRequest(body.Id.ToString());
-            request.AddJsonBody(body);
+            request.AddParameter("application/json", STJson.ToJson(body), ParameterType.RequestBody);
             return Put<TResource>(request, statusCode);
         }
 
@@ -150,14 +150,14 @@ namespace NzbDrone.Integration.Test.Client
         public object InvalidPost(TResource body, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
             var request = BuildRequest();
-            request.AddJsonBody(body);
+            request.AddParameter("application/json", STJson.ToJson(body), ParameterType.RequestBody);
             return Post<object>(request, statusCode);
         }
 
         public object InvalidPut(TResource body, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
             var request = BuildRequest();
-            request.AddJsonBody(body);
+            request.AddParameter("application/json", STJson.ToJson(body), ParameterType.RequestBody);
             return Put<object>(request, statusCode);
         }
 
