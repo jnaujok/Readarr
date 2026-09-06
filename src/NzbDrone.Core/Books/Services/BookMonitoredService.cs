@@ -25,8 +25,12 @@ namespace NzbDrone.Core.Books
 
         public void SetBookMonitoredStatus(Author author, MonitoringOptions monitoringOptions)
         {
+            var addOptions = monitoringOptions as AddAuthorOptions;
+
             if (monitoringOptions != null &&
-                (monitoringOptions.BooksToMonitor.Any() || monitoringOptions.Monitor != MonitorTypes.Unknown))
+                (monitoringOptions.BooksToMonitor.Any() ||
+                 monitoringOptions.Monitor != MonitorTypes.Unknown ||
+                 addOptions != null))
             {
                 _logger.Debug("[{0}] Setting book monitored status.", author.Name);
 
@@ -37,6 +41,14 @@ namespace NzbDrone.Core.Books
                 var booksWithoutFiles = books.Where(c => !booksWithFiles.Select(e => e.Id).Contains(c.Id) && c.ReleaseDate <= DateTime.UtcNow).ToList();
 
                 var monitoredBooks = monitoringOptions.BooksToMonitor;
+
+                if (addOptions != null)
+                {
+                    foreach (var book in books)
+                    {
+                        book.AnyEditionOk = addOptions.AnyEditionOk;
+                    }
+                }
 
                 // If specific books are passed use those instead of the monitoring options.
                 if (monitoredBooks.Any())
@@ -81,6 +93,8 @@ namespace NzbDrone.Core.Books
                         case MonitorTypes.First:
                             ToggleBooksMonitoredState(books, false);
                             ToggleBooksMonitoredState(books.OrderBy(e => e.ReleaseDate).Take(1), true);
+                            break;
+                        case MonitorTypes.Unknown:
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();

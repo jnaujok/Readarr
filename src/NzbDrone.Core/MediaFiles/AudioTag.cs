@@ -143,6 +143,8 @@ namespace NzbDrone.Core.MediaFiles
 
                 OriginalYear = OriginalReleaseDate.HasValue ? (uint)OriginalReleaseDate?.Year : 0;
 
+                var narrator = ReadNarrator(file);
+
                 foreach (var codec in file.Properties.Codecs)
                 {
                     var acodec = codec as IAudioCodec;
@@ -168,10 +170,14 @@ namespace NzbDrone.Core.MediaFiles
                             AudioBitrate = bitrate,
                             AudioChannels = acodec.AudioChannels,
                             AudioBits = file.Properties.BitsPerSample,
-                            AudioSampleRate = acodec.AudioSampleRate
+                            AudioSampleRate = acodec.AudioSampleRate,
+                            Narrator = narrator
                         };
                     }
                 }
+
+                MediaInfo = MediaInfo ?? new MediaInfoModel();
+                MediaInfo.Narrator = MediaInfo.Narrator ?? narrator;
 
                 IsValid = true;
             }
@@ -200,6 +206,50 @@ namespace NzbDrone.Core.MediaFiles
             }
 
             MediaInfo = MediaInfo ?? new MediaInfoModel();
+        }
+
+        private static string ReadNarrator(TagLib.File file)
+        {
+            if (file == null)
+            {
+                return null;
+            }
+
+            if (file.TagTypesOnDisk.HasFlag(TagTypes.Id3v2))
+            {
+                var id3tag = (TagLib.Id3v2.Tag)file.GetTag(TagTypes.Id3v2);
+                var frame = UserTextInformationFrame.Get(id3tag, "NARRATOR", false);
+                var text = frame?.Text?.FirstOrDefault(x => x.IsNotNullOrWhiteSpace());
+
+                if (text.IsNotNullOrWhiteSpace())
+                {
+                    return text;
+                }
+            }
+
+            if (file.TagTypesOnDisk.HasFlag(TagTypes.Xiph))
+            {
+                var flactag = (TagLib.Ogg.XiphComment)file.GetTag(TagTypes.Xiph);
+                var text = flactag.GetField("NARRATOR").ExclusiveOrDefault();
+
+                if (text.IsNotNullOrWhiteSpace())
+                {
+                    return text;
+                }
+            }
+
+            if (file.TagTypesOnDisk.HasFlag(TagTypes.Apple))
+            {
+                var appletag = (TagLib.Mpeg4.AppleTag)file.GetTag(TagTypes.Apple);
+                var text = appletag.GetDashBox("com.apple.iTunes", "NARRATOR");
+
+                if (text.IsNotNullOrWhiteSpace())
+                {
+                    return text;
+                }
+            }
+
+            return null;
         }
 
         private int EstimateBitrate(TagLib.File file, string path)

@@ -11,6 +11,7 @@ import TableOptionsModalWrapper from 'Components/Table/TableOptions/TableOptions
 import VirtualTable from 'Components/Table/VirtualTable';
 import VirtualTableRow from 'Components/Table/VirtualTableRow';
 import { align, icons, kinds, sortDirections } from 'Helpers/Props';
+import InteractiveImportModal from 'InteractiveImport/InteractiveImportModal';
 import hasDifferentItemsOrOrder from 'Utilities/Object/hasDifferentItemsOrOrder';
 import translate from 'Utilities/String/translate';
 import getSelectedIds from 'Utilities/Table/getSelectedIds';
@@ -18,6 +19,39 @@ import selectAll from 'Utilities/Table/selectAll';
 import toggleSelected from 'Utilities/Table/toggleSelected';
 import UnmappedFilesTableHeader from './UnmappedFilesTableHeader';
 import UnmappedFilesTableRow from './UnmappedFilesTableRow';
+
+function getCommonFolder(paths) {
+  if (!paths.length) {
+    return null;
+  }
+
+  const folders = paths.map((path) => {
+    return path.substring(0, Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')));
+  });
+
+  let common = folders[0];
+
+  for (let i = 1; i < folders.length; i++) {
+    const folder = folders[i];
+    let j = 0;
+    const max = Math.min(common.length, folder.length);
+
+    while (j < max && common[j].toLowerCase() === folder[j].toLowerCase()) {
+      j++;
+    }
+
+    common = common.substring(0, j);
+    const lastSep = Math.max(common.lastIndexOf('/'), common.lastIndexOf('\\'));
+
+    if (lastSep <= 0) {
+      return folders[0];
+    }
+
+    common = common.substring(0, lastSep);
+  }
+
+  return common;
+}
 
 class UnmappedFilesTable extends Component {
 
@@ -32,7 +66,9 @@ class UnmappedFilesTable extends Component {
       allSelected: false,
       allUnselected: false,
       lastToggled: null,
-      selectedState: {}
+      selectedState: {},
+      isInteractiveImportModalOpen: false,
+      mapFolder: null
     };
   }
 
@@ -134,6 +170,24 @@ class UnmappedFilesTable extends Component {
     this.props.deleteUnmappedFiles(selectedIds);
   };
 
+  onMapSelectedPress = () => {
+    const selectedIds = this.getSelectedIds();
+    const selectedItems = this.props.items.filter((item) => selectedIds.includes(item.id));
+    const folder = getCommonFolder(selectedItems.map((item) => item.path));
+
+    this.setState({
+      isInteractiveImportModalOpen: true,
+      mapFolder: folder
+    });
+  };
+
+  onInteractiveImportModalClose = () => {
+    this.setState({
+      isInteractiveImportModalOpen: false,
+      mapFolder: null
+    });
+  };
+
   rowRenderer = ({ key, rowIndex, style }) => {
     const {
       items,
@@ -187,7 +241,9 @@ class UnmappedFilesTable extends Component {
       scroller,
       allSelected,
       allUnselected,
-      selectedState
+      selectedState,
+      isInteractiveImportModalOpen,
+      mapFolder
     } = this.state;
 
     const selectedTrackFileIds = this.getSelectedIds();
@@ -202,6 +258,12 @@ class UnmappedFilesTable extends Component {
               isDisabled={isPopulated && !error && !items.length}
               isSpinning={isScanningFolders}
               onPress={onAddMissingAuthorsPress}
+            />
+            <PageToolbarButton
+              label={translate('MapSelected')}
+              iconName={icons.INTERACTIVE}
+              isDisabled={selectedTrackFileIds.length === 0}
+              onPress={this.onMapSelectedPress}
             />
             <PageToolbarButton
               label={translate('DeleteSelected')}
@@ -269,6 +331,17 @@ class UnmappedFilesTable extends Component {
               />
           }
         </PageContentBody>
+
+        <InteractiveImportModal
+          isOpen={isInteractiveImportModalOpen}
+          folder={mapFolder}
+          showFilterExistingFiles={true}
+          filterExistingFiles={false}
+          showImportMode={false}
+          showReplaceExistingFiles={false}
+          replaceExistingFiles={false}
+          onModalClose={this.onInteractiveImportModalClose}
+        />
       </PageContent>
     );
   }

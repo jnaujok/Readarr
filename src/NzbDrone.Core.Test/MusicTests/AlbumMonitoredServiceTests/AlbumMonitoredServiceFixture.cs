@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FizzWare.NBuilder;
+using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Extensions;
@@ -93,6 +94,23 @@ namespace NzbDrone.Core.Test.MusicTests.BookMonitoredServiceTests
 
             Mocker.GetMock<IBookService>()
                   .Verify(v => v.UpdateBook(It.Is<Book>(l => l.Monitored)), Times.Exactly(_books.Count));
+        }
+
+        [Test]
+        public void should_apply_any_edition_ok_from_add_options()
+        {
+            _books.ForEach(b => b.AnyEditionOk = true);
+
+            Subject.SetBookMonitoredStatus(_author, new AddAuthorOptions
+            {
+                Monitor = MonitorTypes.All,
+                AnyEditionOk = false
+            });
+
+            _books.Should().OnlyContain(b => b.AnyEditionOk == false);
+
+            Mocker.GetMock<IBookService>()
+                  .Verify(v => v.UpdateBook(It.Is<Book>(b => b.AnyEditionOk == false)), Times.Exactly(_books.Count));
         }
 
         [Test]

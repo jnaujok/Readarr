@@ -63,7 +63,8 @@ class AddNewAuthorModalContentConnector extends Component {
       monitorNewItems,
       qualityProfileId,
       metadataProfileId,
-      tags
+      tags,
+      anyEditionOk
     } = this.props;
 
     this.props.addAuthor({
@@ -74,7 +75,8 @@ class AddNewAuthorModalContentConnector extends Component {
       qualityProfileId: qualityProfileId.value,
       metadataProfileId: metadataProfileId.value,
       tags: tags.value,
-      searchForMissingBooks
+      searchForMissingBooks,
+      anyEditionOk: anyEditionOk ? anyEditionOk.value : true
     });
   };
 
@@ -100,6 +102,7 @@ AddNewAuthorModalContentConnector.propTypes = {
   qualityProfileId: PropTypes.object,
   metadataProfileId: PropTypes.object,
   tags: PropTypes.object.isRequired,
+  anyEditionOk: PropTypes.object,
   onModalClose: PropTypes.func.isRequired,
   setAuthorAddDefault: PropTypes.func.isRequired,
   addAuthor: PropTypes.func.isRequired

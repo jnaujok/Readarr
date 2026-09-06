@@ -5,11 +5,13 @@ using FizzWare.NBuilder;
 using FluentAssertions;
 using NUnit.Framework;
 using NzbDrone.Core.Books;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Organizer;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Test.Framework;
+using NzbDrone.Test.Common;
 
 namespace NzbDrone.Core.Test.OrganizerTests.FileNameBuilderTests
 {
@@ -655,6 +657,147 @@ namespace NzbDrone.Core.Test.OrganizerTests.FileNameBuilderTests
 
             Subject.BuildBookFileName(_author, _edition, _trackFile)
                    .Should().Be(releaseGroup);
+        }
+
+        [Test]
+        public void should_use_fallback_when_token_is_empty()
+        {
+            _edition.Isbn13 = null;
+            _namingConfig.StandardBookFormat = "{Isbn|Unknown}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("Unknown");
+        }
+
+        [Test]
+        public void should_use_token_value_instead_of_fallback_when_present()
+        {
+            _edition.Isbn13 = "9781234567890";
+            _namingConfig.StandardBookFormat = "{Isbn|Unknown}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("9781234567890");
+        }
+
+        [Test]
+        public void should_use_series_fallback_when_book_has_no_series()
+        {
+            _book.SeriesLinks = new List<SeriesBookLink>();
+            _namingConfig.StandardBookFormat = "{Book Series|Standalone}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("Standalone");
+        }
+
+        [TestCase("Hybrid Theory (Unabridged)", "Hybrid Theory")]
+        [TestCase("Hybrid Theory [Kindle Edition]", "Hybrid Theory")]
+        [TestCase("Hybrid Theory", "Hybrid Theory")]
+        public void should_replace_book_title_no_edition(string title, string expected)
+        {
+            _edition.Title = title;
+            _namingConfig.StandardBookFormat = "{Book TitleNoEdition}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be(expected);
+        }
+
+        [Test]
+        public void should_pad_whole_series_position()
+        {
+            _book.SeriesLinks.Value.First().Position = "3";
+            _namingConfig.StandardBookFormat = "{Book SeriesPosition:00}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("03");
+        }
+
+        [Test]
+        public void should_leave_compound_series_position_unpadded()
+        {
+            _namingConfig.StandardBookFormat = "{Book SeriesPosition:00}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("1-2");
+        }
+
+        [Test]
+        public void should_return_empty_for_blank_series_position()
+        {
+            _book.SeriesLinks.Value.First().Position = " ";
+            _namingConfig.StandardBookFormat = "{Book SeriesPosition:00}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("");
+        }
+
+        [Test]
+        public void should_replace_isbn_and_asin()
+        {
+            _edition.Isbn13 = "9781234567890";
+            _edition.Asin = "B00EXAMPLE";
+            _namingConfig.StandardBookFormat = "{Isbn} {Asin}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("9781234567890 B00EXAMPLE");
+        }
+
+        [Test]
+        public void should_replace_narrator()
+        {
+            _trackFile.MediaInfo.Narrator = "Jane Doe";
+            _namingConfig.StandardBookFormat = "{Narrator}";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("Jane Doe");
+        }
+
+        [Test]
+        public void should_omit_author_folder_on_rename_when_enabled()
+        {
+            _author.Path = @"C:\Library\Linkin Park".AsOsAgnostic();
+
+            Mocker.GetMock<IConfigService>()
+                  .SetupGet(c => c.OmitAuthorFolderOnRename)
+                  .Returns(true);
+
+            Subject.BuildBookFilePath(_author, _edition, "file", ".mp3")
+                   .Should().Be(Path.Combine(@"C:\Library".AsOsAgnostic(), "file.mp3"));
+        }
+
+        [Test]
+        public void should_keep_author_folder_on_rename_when_disabled()
+        {
+            _author.Path = @"C:\Library\Linkin Park".AsOsAgnostic();
+
+            Mocker.GetMock<IConfigService>()
+                  .SetupGet(c => c.OmitAuthorFolderOnRename)
+                  .Returns(false);
+
+            Subject.BuildBookFilePath(_author, _edition, "file", ".mp3")
+                   .Should().Be(Path.Combine(_author.Path, "file.mp3"));
+        }
+
+        [Test]
+        public void should_fall_back_to_author_path_when_omit_folder_has_no_parent()
+        {
+            _author.Path = "Linkin Park";
+
+            Mocker.GetMock<IConfigService>()
+                  .SetupGet(c => c.OmitAuthorFolderOnRename)
+                  .Returns(true);
+
+            Subject.BuildBookFilePath(_author, _edition, "file", ".mp3")
+                   .Should().Be(Path.Combine(_author.Path, "file.mp3"));
+        }
+
+        [TestCase("Hybrid Theory (Unabridged)", "Hybrid Theory")]
+        [TestCase("The Book: Kindle Edition", "The Book")]
+        [TestCase("Some Title", "Some Title")]
+        [TestCase("", "")]
+        [TestCase(null, "")]
+        public void should_strip_edition_junk_from_title(string title, string expected)
+        {
+            FileNameBuilder.TitleWithoutEdition(title).Should().Be(expected);
         }
     }
 }

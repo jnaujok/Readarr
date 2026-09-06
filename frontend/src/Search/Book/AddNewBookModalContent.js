@@ -3,12 +3,15 @@ import React, { Component } from 'react';
 import TextTruncate from 'react-text-truncate';
 import BookCover from 'Book/BookCover';
 import CheckInput from 'Components/Form/CheckInput';
+import FormGroup from 'Components/Form/FormGroup';
+import FormInputGroup from 'Components/Form/FormInputGroup';
+import FormLabel from 'Components/Form/FormLabel';
 import SpinnerButton from 'Components/Link/SpinnerButton';
 import ModalBody from 'Components/Modal/ModalBody';
 import ModalContent from 'Components/Modal/ModalContent';
 import ModalFooter from 'Components/Modal/ModalFooter';
 import ModalHeader from 'Components/Modal/ModalHeader';
-import { kinds } from 'Helpers/Props';
+import { inputTypes, kinds } from 'Helpers/Props';
 import stripHtml from 'Utilities/String/stripHtml';
 import translate from 'Utilities/String/translate';
 import AddAuthorOptionsForm from '../Common/AddAuthorOptionsForm.js';
@@ -52,7 +55,9 @@ class AddNewBookModalContent extends Component {
       isAdding,
       isExistingAuthor,
       isSmallScreen,
+      anyEditionOk,
       onModalClose,
+      onInputChange,
       ...otherProps
     } = this.props;
 
@@ -115,8 +120,27 @@ class AddNewBookModalContent extends Component {
                     authorName={authorName}
                     includeNoneMetadataProfile={true}
                     includeSpecificBookMonitor={true}
+                    anyEditionOk={anyEditionOk}
+                    onInputChange={onInputChange}
                     {...otherProps}
                   />
+              }
+
+              {
+                isExistingAuthor &&
+                  <FormGroup>
+                    <FormLabel>
+                      {translate('AutomaticallySwitchEdition')}
+                    </FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.CHECK}
+                      name="anyEditionOk"
+                      helpText={translate('AnyEditionOkHelpText')}
+                      onChange={onInputChange}
+                      {...anyEditionOk}
+                    />
+                  </FormGroup>
               }
             </div>
           </div>
@@ -162,8 +186,14 @@ AddNewBookModalContent.propTypes = {
   addError: PropTypes.object,
   isExistingAuthor: PropTypes.bool.isRequired,
   isSmallScreen: PropTypes.bool.isRequired,
+  anyEditionOk: PropTypes.object,
   onModalClose: PropTypes.func.isRequired,
-  onAddBookPress: PropTypes.func.isRequired
+  onAddBookPress: PropTypes.func.isRequired,
+  onInputChange: PropTypes.func.isRequired
+};
+
+AddNewBookModalContent.defaultProps = {
+  anyEditionOk: { value: true }
 };
 
 export default AddNewBookModalContent;

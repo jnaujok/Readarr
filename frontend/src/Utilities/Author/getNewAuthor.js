@@ -7,12 +7,14 @@ function getNewAuthor(author, payload) {
     qualityProfileId,
     metadataProfileId,
     tags,
-    searchForMissingBooks = false
+    searchForMissingBooks = false,
+    anyEditionOk = true
   } = payload;
 
   const addOptions = {
     monitor,
-    searchForMissingBooks
+    searchForMissingBooks,
+    anyEditionOk
   };
 
   author.addOptions = addOptions;

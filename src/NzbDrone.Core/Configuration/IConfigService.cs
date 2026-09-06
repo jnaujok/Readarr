@@ -27,6 +27,7 @@ namespace NzbDrone.Core.Configuration
         int RecycleBinCleanupDays { get; set; }
         ProperDownloadTypes DownloadPropersAndRepacks { get; set; }
         bool CreateEmptyAuthorFolders { get; set; }
+        bool OmitAuthorFolderOnRename { get; set; }
         bool DeleteEmptyFolders { get; set; }
         FileDateType FileDate { get; set; }
         bool SkipFreeSpaceCheckWhenImporting { get; set; }

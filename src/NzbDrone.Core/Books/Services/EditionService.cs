@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Books.Events;
+using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Parser;
 
@@ -30,12 +31,15 @@ namespace NzbDrone.Core.Books
         IHandle<BookDeletedEvent>
     {
         private readonly IEditionRepository _editionRepository;
+        private readonly IMediaFileRepository _mediaFileRepository;
         private readonly IEventAggregator _eventAggregator;
 
         public EditionService(IEditionRepository editionRepository,
+                              IMediaFileRepository mediaFileRepository,
                               IEventAggregator eventAggregator)
         {
             _editionRepository = editionRepository;
+            _mediaFileRepository = mediaFileRepository;
             _eventAggregator = eventAggregator;
         }
 
@@ -129,7 +133,9 @@ namespace NzbDrone.Core.Books
 
         public List<Edition> SetMonitored(Edition edition)
         {
-            return _editionRepository.SetMonitored(edition);
+            var editions = _editionRepository.SetMonitored(edition);
+            _mediaFileRepository.SetEditionForBook(edition.BookId, edition.Id);
+            return editions;
         }
 
         public void Handle(BookDeletedEvent message)

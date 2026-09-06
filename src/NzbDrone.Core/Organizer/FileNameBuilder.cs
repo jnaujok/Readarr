@@ -9,6 +9,7 @@ using NzbDrone.Common.Cache;
 using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Books;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.CustomFormats;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Parser;
@@ -30,11 +31,15 @@ namespace NzbDrone.Core.Organizer
         private readonly INamingConfigService _namingConfigService;
         private readonly IQualityDefinitionService _qualityDefinitionService;
         private readonly ICustomFormatCalculationService _formatCalculator;
+        private readonly IConfigService _configService;
         private readonly ICached<BookFormat[]> _trackFormatCache;
         private readonly Logger _logger;
 
-        private static readonly Regex TitleRegex = new Regex(@"\{(?<prefix>[- ._\[(]*)(?<token>(?:[a-z0-9]+)(?:(?<separator>[- ._]+)(?:[a-z0-9]+))?)(?::(?<customFormat>[a-z0-9]+))?(?<suffix>[- ._)\]]*)\}",
+        private static readonly Regex TitleRegex = new Regex(@"\{(?<prefix>[- ._\[(]*)(?<token>(?:[a-z0-9]+)(?:(?<separator>[- ._]+)(?:[a-z0-9]+))?)(?::(?<customFormat>[a-z0-9]+))?(?:\|(?<fallback>[^}]+))?(?<suffix>[- ._)\]]*)\}",
                                                              RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static readonly Regex EditionJunkRegex = new Regex(@"\s*[\(\[]?\s*(?:unabridged|abridged|kindle edition|nook|ebook|audiobook|audio cd|audio cassette|audible audio|large print|illustrated edition|revised edition|first edition|second edition|third edition|\d+(?:st|nd|rd|th) edition)\s*[\)\]]?",
+                                                            RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public static readonly Regex PartRegex = new Regex(@"\{(?<prefix>[^{]*?)(?<token1>PartNumber|PartCount)(?::(?<customFormat1>[a-z0-9]+))?(?<separator>.*(?=PartNumber|PartCount))?((?<token2>PartNumber|PartCount)(?::(?<customFormat2>[a-z0-9]+))?)?(?<suffix>[^}]*)\}",
                                                             RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -60,11 +65,13 @@ namespace NzbDrone.Core.Organizer
                                IQualityDefinitionService qualityDefinitionService,
                                ICacheManager cacheManager,
                                ICustomFormatCalculationService formatCalculator,
+                               IConfigService configService,
                                Logger logger)
         {
             _namingConfigService = namingConfigService;
             _qualityDefinitionService = qualityDefinitionService;
             _formatCalculator = formatCalculator;
+            _configService = configService;
             _trackFormatCache = cacheManager.GetCache<BookFormat[]>(GetType(), "bookFormat");
             _logger = logger;
         }
@@ -123,7 +130,14 @@ namespace NzbDrone.Core.Organizer
         {
             Ensure.That(extension, () => extension).IsNotNullOrWhiteSpace();
 
-            var path = BuildBookPath(author);
+            var path = _configService.OmitAuthorFolderOnRename
+                ? Path.GetDirectoryName(author.Path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+                : BuildBookPath(author);
+
+            if (path.IsNullOrWhiteSpace())
+            {
+                path = BuildBookPath(author);
+            }
 
             return Path.Combine(path, fileName + extension);
         }
@@ -228,6 +242,37 @@ namespace NzbDrone.Core.Organizer
             return CleanFileName(name, NamingConfig.Default);
         }
 
+        public static string TitleWithoutEdition(string title)
+        {
+            if (title.IsNullOrWhiteSpace())
+            {
+                return string.Empty;
+            }
+
+            return EditionJunkRegex.Replace(title, string.Empty).Trim(' ', '-', ':');
+        }
+
+        private static string FormatSeriesPosition(string position, string customFormat)
+        {
+            if (position.IsNullOrWhiteSpace())
+            {
+                return string.Empty;
+            }
+
+            if (customFormat.IsNullOrWhiteSpace())
+            {
+                return position;
+            }
+
+            if (decimal.TryParse(position, NumberStyles.Any, CultureInfo.InvariantCulture, out var number) &&
+                number == Math.Truncate(number))
+            {
+                return ((int)number).ToString(customFormat, CultureInfo.InvariantCulture);
+            }
+
+            return position;
+        }
+
         public static string CleanFolderName(string name)
         {
             name = FileNameCleanupRegex.Replace(name, match => match.Captures[0].Value[0].ToString());
@@ -254,6 +299,8 @@ namespace NzbDrone.Core.Organizer
             tokenHandlers["{Book Title}"] = m => edition.Title;
             tokenHandlers["{Book CleanTitle}"] = m => CleanTitle(edition.Title);
             tokenHandlers["{Book TitleThe}"] = m => TitleThe(edition.Title);
+            tokenHandlers["{Book TitleNoEdition}"] = m => TitleWithoutEdition(edition.Title);
+            tokenHandlers["{Book CleanTitleNoEdition}"] = m => CleanTitle(TitleWithoutEdition(edition.Title));
 
             var (titleNoSub, subtitle) = edition.Title.SplitBookTitle(edition.Book.Value.AuthorMetadata.Value.Name);
 
@@ -272,7 +319,7 @@ namespace NzbDrone.Core.Organizer
                 var seriesTitle = primarySeries.Series?.Value?.Title + (primarySeries.Position.IsNotNullOrWhiteSpace() ? $" #{primarySeries.Position}" : string.Empty);
 
                 tokenHandlers["{Book Series}"] = m => primarySeries.Series.Value.Title;
-                tokenHandlers["{Book SeriesPosition}"] = m => primarySeries.Position;
+                tokenHandlers["{Book SeriesPosition}"] = m => FormatSeriesPosition(primarySeries.Position, m.CustomFormat);
                 tokenHandlers["{Book SeriesTitle}"] = m => seriesTitle;
             }
 
@@ -280,6 +327,10 @@ namespace NzbDrone.Core.Organizer
             {
                 tokenHandlers["{Book Disambiguation}"] = m => edition.Disambiguation;
             }
+
+            tokenHandlers["{Isbn}"] = m => edition.Isbn13 ?? string.Empty;
+            tokenHandlers["{Isbn13}"] = m => edition.Isbn13 ?? string.Empty;
+            tokenHandlers["{Asin}"] = m => edition.Asin ?? string.Empty;
 
             if (edition.ReleaseDate.HasValue)
             {
@@ -318,6 +369,7 @@ namespace NzbDrone.Core.Organizer
             tokenHandlers["{Original Title}"] = m => GetOriginalTitle(bookFile);
             tokenHandlers["{Original Filename}"] = m => GetOriginalFileName(bookFile);
             tokenHandlers["{Release Group}"] = m => bookFile.ReleaseGroup ?? m.DefaultValue("Readarr");
+            tokenHandlers["{Narrator}"] = m => bookFile.MediaInfo?.Narrator ?? string.Empty;
 
             if (bookFile.PartCount > 1)
             {
@@ -386,7 +438,8 @@ namespace NzbDrone.Core.Organizer
                 Separator = match.Groups["separator"].Value,
                 Suffix = match.Groups["suffix"].Value,
                 Token = match.Groups["token"].Value,
-                CustomFormat = match.Groups["customFormat"].Value
+                CustomFormat = match.Groups["customFormat"].Value,
+                Fallback = match.Groups["fallback"].Success ? match.Groups["fallback"].Value : null
             };
 
             if (tokenMatch.CustomFormat.IsNullOrWhiteSpace())
@@ -397,6 +450,11 @@ namespace NzbDrone.Core.Organizer
             var tokenHandler = tokenHandlers.GetValueOrDefault(tokenMatch.Token, m => string.Empty);
 
             var replacementText = tokenHandler(tokenMatch).Trim();
+
+            if (replacementText.IsNullOrWhiteSpace() && tokenMatch.Fallback.IsNotNullOrWhiteSpace())
+            {
+                replacementText = tokenMatch.Fallback.Trim();
+            }
 
             if (tokenMatch.Token.All(t => !char.IsLetter(t) || char.IsLower(t)))
             {
@@ -553,6 +611,7 @@ namespace NzbDrone.Core.Organizer
         public string Suffix { get; set; }
         public string Token { get; set; }
         public string CustomFormat { get; set; }
+        public string Fallback { get; set; }
 
         public string DefaultValue(string defaultValue)
         {

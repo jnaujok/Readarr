@@ -106,5 +106,33 @@ namespace NzbDrone.Core.Test.MusicTests
 
             ExceptionVerification.ExpectedErrors(1);
         }
+
+        [Test]
+        public void should_preserve_any_edition_ok_from_request()
+        {
+            var newBook = BookToAdd("edition", "book", "author");
+            newBook.AnyEditionOk = false;
+
+            GivenValidBook("book", "edition");
+            GivenValidPath();
+
+            var book = Subject.AddBook(newBook);
+
+            book.AnyEditionOk.Should().BeFalse();
+        }
+
+        [Test]
+        public void should_keep_any_edition_ok_when_enabled_on_add()
+        {
+            var newBook = BookToAdd("edition", "book", "author");
+            newBook.AnyEditionOk = true;
+
+            GivenValidBook("book", "edition");
+            GivenValidPath();
+
+            var book = Subject.AddBook(newBook);
+
+            book.AnyEditionOk.Should().BeTrue();
+        }
     }
 }

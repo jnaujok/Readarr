@@ -9,5 +9,6 @@ namespace NzbDrone.Core.Parser.Model
         public int AudioChannels { get; set; }
         public int AudioBits { get; set; }
         public int AudioSampleRate { get; set; }
+        public string Narrator { get; set; }
     }
 }

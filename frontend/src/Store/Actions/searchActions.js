@@ -36,7 +36,8 @@ export const defaultState = {
     monitorNewItems: monitorNewItemsOptions[0].key,
     qualityProfileId: 0,
     metadataProfileId: 0,
-    tags: []
+    tags: [],
+    anyEditionOk: true
   },
 
   bookDefaults: {
@@ -45,7 +46,8 @@ export const defaultState = {
     monitorNewItems: monitorNewItemsOptions[0].key,
     qualityProfileId: 0,
     metadataProfileId: 0,
-    tags: []
+    tags: [],
+    anyEditionOk: true
   }
 };
 
