@@ -6,9 +6,12 @@ using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Core.Update;
+using NzbDrone.Test.Common.Categories;
 
 namespace NzbDrone.Core.Test.UpdateTests
 {
+    [TestFixture]
+    [IntegrationTest]
     public class UpdatePackageProviderFixture : CoreTest<UpdatePackageProvider>
     {
         [SetUp]

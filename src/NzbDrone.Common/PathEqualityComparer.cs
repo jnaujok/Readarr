@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
@@ -19,12 +20,16 @@ namespace NzbDrone.Common
 
         public int GetHashCode(string obj)
         {
-            if (OsInfo.IsWindows)
-            {
-                return obj.CleanFilePath().ToLower().GetHashCode();
-            }
+            return GetHashCode(obj, OsInfo.IsWindows);
+        }
 
-            return obj.CleanFilePath().GetHashCode();
+        public static int GetHashCode(string path, bool ignoreCase)
+        {
+            var cleaned = path.CleanFilePath();
+
+            return ignoreCase
+                ? StringComparer.OrdinalIgnoreCase.GetHashCode(cleaned)
+                : cleaned.GetHashCode();
         }
     }
 }

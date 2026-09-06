@@ -54,7 +54,7 @@ namespace NzbDrone.Common.Http.Dispatchers
 
         public async Task<HttpResponse> GetResponseAsync(HttpRequest request, CookieContainer cookies)
         {
-            var requestMessage = new HttpRequestMessage(request.Method, (Uri)request.Url)
+            using var requestMessage = new HttpRequestMessage(request.Method, (Uri)request.Url)
             {
                 Version = HttpVersion.Version20,
                 VersionPolicy = HttpVersionPolicy.RequestVersionOrLower
@@ -285,20 +285,18 @@ namespace NzbDrone.Common.Http.Dispatchers
             {
                 try
                 {
-                    var localToken = cancellationToken;
-
                     if (!hasResolvedIPv6Availability)
                     {
                         // to make things move fast, use a very low timeout for the initial ipv6 attempt.
-                        var quickFailCts = new CancellationTokenSource(connection_establish_timeout);
-                        var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, quickFailCts.Token);
+                        using var quickFailCts = new CancellationTokenSource(connection_establish_timeout);
+                        using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, quickFailCts.Token);
 
-                        localToken = linkedTokenSource.Token;
+                        return await attemptConnection(AddressFamily.InterNetworkV6, context, linkedTokenSource.Token);
                     }
 
-                    return await attemptConnection(AddressFamily.InterNetworkV6, context, localToken);
+                    return await attemptConnection(AddressFamily.InterNetworkV6, context, cancellationToken);
                 }
-                catch
+                catch (Exception ex) when (ex is SocketException || ex is OperationCanceledException || ex is HttpRequestException)
                 {
                     // Do not retry IPv6 if a routable IPv4 address is available, otherwise continue to attempt IPv6 connections.
                     var routableIPv4 = HasRoutableIPv4Address();

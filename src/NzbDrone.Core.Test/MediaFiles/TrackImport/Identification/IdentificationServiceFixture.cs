@@ -23,10 +23,12 @@ using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Profiles.Metadata;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Test.Common;
+using NzbDrone.Test.Common.Categories;
 
 namespace NzbDrone.Core.Test.MediaFiles.BookImport.Identification
 {
     [TestFixture]
+    [IntegrationTest]
     public class IdentificationServiceFixture : DbTest
     {
         private AuthorService _authorService;

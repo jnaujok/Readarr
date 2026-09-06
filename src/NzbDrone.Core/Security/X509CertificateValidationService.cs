@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -24,20 +24,18 @@ namespace NzbDrone.Core.Security
         {
             var targetHostName = string.Empty;
 
-            if (sender is not SslStream && sender is not string)
-            {
-                return true;
-            }
-
             if (sender is SslStream request)
             {
                 targetHostName = request.TargetHostName;
             }
-
-            // Mailkit passes host in sender as string
-            if (sender is string stringHost)
+            else if (sender is string stringHost)
             {
                 targetHostName = stringHost;
+            }
+            else if (sslPolicyErrors != SslPolicyErrors.None)
+            {
+                _logger.Error("Certificate validation failed for unknown sender type {0}. {1}", sender?.GetType().FullName ?? "null", sslPolicyErrors);
+                return false;
             }
 
             if (certificate is X509Certificate2 cert2 && cert2.SignatureAlgorithm.FriendlyName == "md5RSA")
@@ -50,12 +48,11 @@ namespace NzbDrone.Core.Security
                 return true;
             }
 
-            if (targetHostName == "localhost" || targetHostName == "127.0.0.1")
+            if (IsLoopbackHost(targetHostName))
             {
                 return true;
             }
 
-            var ipAddresses = GetIPAddresses(targetHostName);
             var certificateValidation = _configService.CertificateValidation;
 
             if (certificateValidation == CertificateValidationType.Disabled)
@@ -64,7 +61,7 @@ namespace NzbDrone.Core.Security
             }
 
             if (certificateValidation == CertificateValidationType.DisabledForLocalAddresses &&
-                ipAddresses.All(i => i.IsIPv6LinkLocal || i.IsLocalAddress()))
+                IsLocalIpLiteral(targetHostName))
             {
                 return true;
             }
@@ -74,14 +71,24 @@ namespace NzbDrone.Core.Security
             return false;
         }
 
-        private IPAddress[] GetIPAddresses(string host)
+        public static bool IsLoopbackHost(string targetHostName)
         {
-            if (IPAddress.TryParse(host, out var ipAddress))
+            if (string.Equals(targetHostName, "localhost", StringComparison.OrdinalIgnoreCase))
             {
-                return new[] { ipAddress };
+                return true;
             }
 
-            return Dns.GetHostEntry(host).AddressList;
+            return IPAddress.TryParse(targetHostName, out var ipAddress) && IPAddress.IsLoopback(ipAddress);
+        }
+
+        public static bool IsLocalIpLiteral(string targetHostName)
+        {
+            if (!IPAddress.TryParse(targetHostName, out var ipAddress))
+            {
+                return false;
+            }
+
+            return ipAddress.IsIPv6LinkLocal || ipAddress.IsLocalAddress();
         }
     }
 }

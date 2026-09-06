@@ -62,7 +62,7 @@ namespace Readarr.Api.V1.Books
         }
 
         [HttpGet]
-        public List<BookResource> GetBooks([FromQuery]int? authorId,
+        public async Task<List<BookResource>> GetBooks([FromQuery]int? authorId,
             [FromQuery]List<int> bookIds,
             [FromQuery]string titleSlug,
             [FromQuery]bool includeAllAuthorBooks = false)
@@ -73,9 +73,12 @@ namespace Readarr.Api.V1.Books
                 var metadataTask = Task.Run(() => _authorService.GetAllAuthors());
                 var books = _bookService.GetAllBooks();
 
-                var editions = editionTask.GetAwaiter().GetResult().GroupBy(x => x.BookId).ToDictionary(x => x.Key, y => y.ToList());
+                var editionList = await editionTask;
+                var authorList = await metadataTask;
 
-                var authors = metadataTask.GetAwaiter().GetResult().ToDictionary(x => x.AuthorMetadataId);
+                var editions = editionList.GroupBy(x => x.BookId).ToDictionary(x => x.Key, y => y.ToList());
+
+                var authors = authorList.ToDictionary(x => x.AuthorMetadataId);
 
                 foreach (var book in books)
                 {

@@ -1,6 +1,8 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using NLog;
 using NzbDrone.Common.TPL;
 using NzbDrone.Core.Lifecycle;
@@ -17,8 +19,12 @@ namespace NzbDrone.Core.Jobs
         private readonly ITaskManager _taskManager;
         private readonly IManageCommandQueue _commandQueueManager;
         private readonly Logger _logger;
-        private static readonly Timer Timer = new Timer();
-        private static CancellationTokenSource _cancellationTokenSource;
+        private readonly object _mutex = new object();
+        private readonly Timer _timer = new Timer();
+
+        private CancellationTokenSource _cancellationTokenSource;
+        private ElapsedEventHandler _elapsedHandler;
+        private volatile bool _stopped = true;
 
         public Scheduler(ITaskManager taskManager, IManageCommandQueue commandQueueManager, Logger logger)
         {
@@ -31,7 +37,7 @@ namespace NzbDrone.Core.Jobs
         {
             try
             {
-                Timer.Enabled = false;
+                _timer.Enabled = false;
 
                 var tasks = _taskManager.GetPending().ToList();
 
@@ -44,28 +50,59 @@ namespace NzbDrone.Core.Jobs
             }
             finally
             {
-                if (!_cancellationTokenSource.IsCancellationRequested)
+                if (!_stopped)
                 {
-                    Timer.Enabled = true;
+                    _timer.Enabled = true;
                 }
             }
         }
 
         public void Handle(ApplicationStartedEvent message)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-            Timer.Interval = 1000 * 30;
-            Timer.Elapsed += (o, args) => Task.Factory.StartNew(ExecuteCommands, _cancellationTokenSource.Token)
-                .LogExceptions();
+            lock (_mutex)
+            {
+                if (_cancellationTokenSource != null)
+                {
+                    return;
+                }
 
-            Timer.Start();
+                _stopped = false;
+                _cancellationTokenSource = new CancellationTokenSource();
+                _timer.Interval = 1000 * 30;
+                _elapsedHandler = (o, args) => Task.Factory.StartNew(ExecuteCommands, _cancellationTokenSource.Token)
+                    .LogExceptions();
+                _timer.Elapsed += _elapsedHandler;
+                _timer.Start();
+            }
         }
 
         public void Handle(ApplicationShutdownRequested message)
         {
             _logger.Info("Shutting down scheduler");
-            _cancellationTokenSource.Cancel(true);
-            Timer.Stop();
+
+            lock (_mutex)
+            {
+                _stopped = true;
+
+                try
+                {
+                    _cancellationTokenSource?.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+
+                _timer.Stop();
+
+                if (_elapsedHandler != null)
+                {
+                    _timer.Elapsed -= _elapsedHandler;
+                    _elapsedHandler = null;
+                }
+
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
+            }
         }
     }
 }
