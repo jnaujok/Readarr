@@ -65,6 +65,11 @@ namespace NzbDrone.Integration.Test.Client
         {
             var content = Execute(request, statusCode);
 
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return default;
+            }
+
             return STJson.Deserialize<T>(content);
         }
 
