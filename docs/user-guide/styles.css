@@ -229,9 +229,37 @@ footer.page-foot {
 
 .card strong { display: block; color: var(--red-dark); margin-bottom: 0.25rem; }
 
+figure {
+  margin: 1rem 0 1.4rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.4rem 0.7rem;
+}
+
+figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+}
+
+figcaption {
+  font-size: 0.88rem;
+  color: var(--muted);
+  padding: 0.45rem 0.35rem 0;
+}
+
 @media (max-width: 800px) {
   .layout { grid-template-columns: 1fr; }
   nav.sidebar { display: none; }
   nav.sidebar.open { display: block; }
   .nav-toggle { display: inline-block; }
+}
+
+@media print {
+  .skip, .nav-toggle { display: none !important; }
+  header.app-header { position: static; }
+  .layout { display: block; }
+  nav.sidebar { display: none; }
+  a { color: inherit; }
 }
