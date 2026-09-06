@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1.6
-# Multi-stage image for Readarr (net8.0, linux-x64, framework-dependent).
+# Multi-stage image for Readarr (net10.0, linux-x64, framework-dependent).
 # Build: docker build --build-arg READARRVERSION=0.4.19.0 --build-arg BRANCH=develop -t readarr:local .
 # Run:   docker run --rm -p 8787:8787 -v readarr-config:/config readarr:local
 
-ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:8.0
-ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim
+ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
+ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-bookworm-slim
 ARG NODE_IMAGE=node:20.11.1-bookworm
 
 # -----------------------------------------------------------------------------
@@ -42,10 +42,10 @@ COPY build.sh LICENSE.md global.json ./
 COPY src ./src
 RUN --mount=type=cache,target=/root/.nuget/packages \
     chmod +x build.sh \
-    && ./build.sh --backend -r linux-x64 -f net8.0
+    && ./build.sh --backend -r linux-x64 -f net10.0
 
 COPY --from=frontend /src/_output/UI /src/_output/UI
-RUN ./build.sh --packages -r linux-x64 -f net8.0
+RUN ./build.sh --packages -r linux-x64 -f net10.0
 
 # -----------------------------------------------------------------------------
 # Runtime
@@ -66,7 +66,7 @@ RUN apt-get update \
     && chown -R readarr:readarr /app /config /books /downloads
 
 WORKDIR /app
-COPY --from=backend --chown=readarr:readarr /src/_artifacts/linux-x64/net8.0/Readarr/ ./
+COPY --from=backend --chown=readarr:readarr /src/_artifacts/linux-x64/net10.0/Readarr/ ./
 RUN find /app -type f \( -name Readarr -o -name Readarr.Update \) -exec chmod 755 {} \;
 
 USER readarr

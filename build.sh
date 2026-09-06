@@ -29,7 +29,9 @@ UpdateVersionNumber()
 
 EnableExtraPlatformsInSDK()
 {
-    SDK_PATH=$(dotnet --list-sdks | grep -P '6\.\d\.\d+' | head -1 | sed 's/\(6\.[0-9]*\.[0-9]*\).*\[\(.*\)\]/\2\/\1/g')
+    SDK_VERSION=$(dotnet --version)
+    SDK_ROOT=$(dotnet --list-sdks | grep -F "${SDK_VERSION}" | sed -n 's/.*\[\(.*\)\]/\1/p' | head -1)
+    SDK_PATH="${SDK_ROOT}/${SDK_VERSION}"
     BUNDLEDVERSIONS="${SDK_PATH}/Microsoft.NETCoreSdk.BundledVersions.props"
     if grep -q freebsd-x64 $BUNDLEDVERSIONS; then
         echo "Extra platforms already enabled"
@@ -372,15 +374,15 @@ then
     Build
     if [[ -z "$RID" || -z "$FRAMEWORK" ]];
     then
-        PackageTests "net8.0" "win-x64"
-        PackageTests "net8.0" "win-x86"
-        PackageTests "net8.0" "linux-x64"
-        PackageTests "net8.0" "linux-musl-x64"
-        PackageTests "net8.0" "osx-x64"
+        PackageTests "net10.0" "win-x64"
+        PackageTests "net10.0" "win-x86"
+        PackageTests "net10.0" "linux-x64"
+        PackageTests "net10.0" "linux-musl-x64"
+        PackageTests "net10.0" "osx-x64"
         if [ "$ENABLE_EXTRA_PLATFORMS" = "YES" ];
         then
-            PackageTests "net8.0" "freebsd-x64"
-            PackageTests "net8.0" "linux-x86"
+            PackageTests "net10.0" "freebsd-x64"
+            PackageTests "net10.0" "linux-x86"
         fi
     else
         PackageTests "$FRAMEWORK" "$RID"
@@ -408,20 +410,20 @@ then
 
     if [[ -z "$RID" || -z "$FRAMEWORK" ]];
     then
-        Package "net8.0" "win-x64"
-        Package "net8.0" "win-x86"
-        Package "net8.0" "linux-x64"
-        Package "net8.0" "linux-musl-x64"
-        Package "net8.0" "linux-arm64"
-        Package "net8.0" "linux-musl-arm64"
-        Package "net8.0" "linux-arm"
-        Package "net8.0" "linux-musl-arm"
-        Package "net8.0" "osx-x64"
-        Package "net8.0" "osx-arm64"
+        Package "net10.0" "win-x64"
+        Package "net10.0" "win-x86"
+        Package "net10.0" "linux-x64"
+        Package "net10.0" "linux-musl-x64"
+        Package "net10.0" "linux-arm64"
+        Package "net10.0" "linux-musl-arm64"
+        Package "net10.0" "linux-arm"
+        Package "net10.0" "linux-musl-arm"
+        Package "net10.0" "osx-x64"
+        Package "net10.0" "osx-arm64"
         if [ "$ENABLE_EXTRA_PLATFORMS" = "YES" ];
         then
-            Package "net8.0" "freebsd-x64"
-            Package "net8.0" "linux-x86"
+            Package "net10.0" "freebsd-x64"
+            Package "net10.0" "linux-x86"
         fi
     else
         Package "$FRAMEWORK" "$RID"
@@ -431,7 +433,7 @@ fi
 if [ "$INSTALLER" = "YES" ];
 then
     InstallInno
-    BuildInstaller "net8.0" "win-x64"
-    BuildInstaller "net8.0" "win-x86"
+    BuildInstaller "net10.0" "win-x64"
+    BuildInstaller "net10.0" "win-x86"
     RemoveInno
 fi

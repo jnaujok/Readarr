@@ -194,6 +194,11 @@ namespace NzbDrone.Core.Datastore
 
             var memberExp = expression as MemberExpression;
 
+            if (memberExp == null)
+            {
+                return false;
+            }
+
             if (TryGetPropertyValue(memberExp, out value))
             {
                 return true;
@@ -296,9 +301,9 @@ namespace NzbDrone.Core.Datastore
             }
             else
             {
-                // Static method
-                // Must be Enumerable.Contains(source, item)
-                if (body.Method.DeclaringType != typeof(Enumerable) || body.Arguments.Count != 2)
+                // Static/extension method: Enumerable.Contains(source, item) or
+                // MemoryExtensions.Contains(array/span, item) (.NET 9+)
+                if (!IsStaticContains(body))
                 {
                     throw new NotSupportedException("Unexpected form of Enumerable.Contains");
                 }
@@ -306,6 +311,8 @@ namespace NzbDrone.Core.Datastore
                 list = body.Arguments[0];
                 item = body.Arguments[1];
             }
+
+            list = UnwrapArrayFromSpan(list);
 
             if (item.Type == typeof(int) && TryGetRightValue(list, out var value))
             {
