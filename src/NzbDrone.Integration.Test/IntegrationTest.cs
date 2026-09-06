@@ -9,6 +9,7 @@ using NzbDrone.Core.Datastore.Migration.Framework;
 using NzbDrone.Core.Indexers.Newznab;
 using NzbDrone.Test.Common;
 using NzbDrone.Test.Common.Datastore;
+using Readarr.Api.V1.Config;
 
 namespace NzbDrone.Integration.Test
 {
@@ -67,7 +68,33 @@ namespace NzbDrone.Integration.Test
             indexer.Protocol = Core.Indexers.DownloadProtocol.Usenet;
 
             // Change Console Log Level to Debug so we get more details.
-            var config = HostConfig.Get(1);
+            var config = HostConfig.Get(1) ?? new Readarr.Api.V1.Config.HostConfigResource();
+            config.Id = 1;
+            if (config.BindAddress.IsNullOrWhiteSpace())
+            {
+                config.BindAddress = "*";
+            }
+
+            if (config.Port <= 0)
+            {
+                config.Port = Port;
+            }
+
+            if (config.Branch.IsNullOrWhiteSpace())
+            {
+                config.Branch = "develop";
+            }
+
+            if (config.BackupInterval <= 0)
+            {
+                config.BackupInterval = 7;
+            }
+
+            if (config.BackupRetention <= 0)
+            {
+                config.BackupRetention = 28;
+            }
+
             config.ConsoleLogLevel = "Debug";
             HostConfig.Put(config);
         }
