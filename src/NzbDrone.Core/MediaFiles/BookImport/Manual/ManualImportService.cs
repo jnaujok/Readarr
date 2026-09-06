@@ -371,17 +371,25 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Manual
                 else
                 {
                     var trackedDownload = _trackedDownloadService.Find(downloadId);
-                    var importResults = _importApprovedBooks.Import(bookImportDecisions, message.ReplaceExistingFiles, trackedDownload.DownloadItem, message.ImportMode);
 
-                    imported.AddRange(importResults);
-
-                    foreach (var importResult in importResults)
+                    if (trackedDownload == null)
                     {
-                        importedTrackedDownload.Add(new ManuallyImportedFile
+                        imported.AddRange(_importApprovedBooks.Import(bookImportDecisions, message.ReplaceExistingFiles, null, message.ImportMode));
+                    }
+                    else
+                    {
+                        var importResults = _importApprovedBooks.Import(bookImportDecisions, message.ReplaceExistingFiles, trackedDownload.DownloadItem, message.ImportMode);
+
+                        imported.AddRange(importResults);
+
+                        foreach (var importResult in importResults)
                         {
-                            TrackedDownload = trackedDownload,
-                            ImportResult = importResult
-                        });
+                            importedTrackedDownload.Add(new ManuallyImportedFile
+                            {
+                                TrackedDownload = trackedDownload,
+                                ImportResult = importResult
+                            });
+                        }
                     }
                 }
             }

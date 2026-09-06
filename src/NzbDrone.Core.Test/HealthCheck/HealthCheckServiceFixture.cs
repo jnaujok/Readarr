@@ -48,6 +48,15 @@ namespace NzbDrone.Core.Test.HealthCheck
 
             _healthCheck.Executed.Should().BeTrue();
         }
+
+        [Test]
+        public void should_debounce_repeated_event_driven_checks()
+        {
+            Subject.HandleAsync(new FakeEvent2());
+            Subject.HandleAsync(new FakeEvent2());
+
+            _healthCheck.ExecutionCount.Should().Be(1);
+        }
     }
 
     public class FakeEvent : IEvent
@@ -69,10 +78,12 @@ namespace NzbDrone.Core.Test.HealthCheck
 
         public bool Executed { get; set; }
         public bool Checked { get; set; }
+        public int ExecutionCount { get; set; }
 
         public Core.HealthCheck.HealthCheck Check()
         {
             Executed = true;
+            ExecutionCount++;
 
             return new Core.HealthCheck.HealthCheck(GetType());
         }

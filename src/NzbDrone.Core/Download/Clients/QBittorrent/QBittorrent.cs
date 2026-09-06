@@ -200,8 +200,9 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
                         return true;
                     }
                 }
-                catch
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
+                    _logger.Debug(ex, "qBittorrent has not loaded torrent '{0}' yet", hash);
                 }
 
                 _logger.Trace("Torrent '{0}' not yet visible in qbit, waiting 100ms.", hash);

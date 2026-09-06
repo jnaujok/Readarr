@@ -75,7 +75,14 @@ namespace NzbDrone.Common.Http
 
                 do
                 {
-                    request.Url += new HttpUri(response.Headers.GetSingleValue("Location"));
+                    var nextUrl = request.Url + new HttpUri(response.Headers.GetSingleValue("Location"));
+
+                    if (!HttpRedirectGuard.CanFollow(request.Url, nextUrl))
+                    {
+                        throw new WebException($"Blocked redirect from {request.Url} to {nextUrl}", WebExceptionStatus.ProtocolError);
+                    }
+
+                    request.Url = nextUrl;
                     autoRedirectChain.Add(request.Url.ToString());
 
                     _logger.Trace("Redirected to {0}", request.Url);

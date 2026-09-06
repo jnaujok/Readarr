@@ -34,6 +34,14 @@ class PageHeaderActionsMenuConnector extends Component {
     this.props.shutdown();
   };
 
+  onLogoutPress = () => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${window.Readarr.urlBase}/logout`;
+    document.body.appendChild(form);
+    form.submit();
+  };
+
   //
   // Render
 
@@ -43,6 +51,7 @@ class PageHeaderActionsMenuConnector extends Component {
         {...this.props}
         onRestartPress={this.onRestartPress}
         onShutdownPress={this.onShutdownPress}
+        onLogoutPress={this.onLogoutPress}
       />
     );
   }

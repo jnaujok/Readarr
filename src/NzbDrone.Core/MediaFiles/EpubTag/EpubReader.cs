@@ -15,7 +15,7 @@ namespace VersOne.Epub
         /// <returns></returns>
         public static EpubBookRef OpenBook(string filePath)
         {
-            return OpenBookAsync(filePath).Result;
+            return OpenBookAsync(filePath).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -56,7 +56,15 @@ namespace VersOne.Epub
             }
             catch
             {
-                result?.Dispose();
+                if (result != null)
+                {
+                    result.Dispose();
+                }
+                else
+                {
+                    zipArchive.Dispose();
+                }
+
                 throw;
             }
         }
