@@ -11,7 +11,7 @@ namespace NzbDrone.Core.Datastore
 
         protected static bool IsStaticContains(MethodCallExpression body)
         {
-            if (body.Arguments.Count < 2)
+            if (body.Method.Name != "Contains" || body.Arguments.Count != 2)
             {
                 return false;
             }
