@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -67,6 +68,11 @@ namespace NzbDrone.Integration.Test.Client
         {
             var content = Execute(request, statusCode);
 
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return default;
+            }
+
             return Json.Deserialize<T>(content);
         }
 
@@ -77,14 +83,26 @@ namespace NzbDrone.Integration.Test.Client
             var json = Json.ToJson(body);
             _logger.Info("{0}: {1}", method, url);
 
+            HttpMethod httpMethod;
+            if (method == Method.PUT)
+            {
+                httpMethod = HttpMethod.Put;
+            }
+            else if (method == Method.POST)
+            {
+                httpMethod = HttpMethod.Post;
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(method), method, "SendJson supports POST and PUT only.");
+            }
+
             using var http = new HttpClient();
             http.DefaultRequestHeaders.TryAddWithoutValidation("X-Api-Key", _apiKey);
             http.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", _apiKey);
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var httpResponse = method == Method.PUT
-                ? http.PutAsync(url, content).GetAwaiter().GetResult()
-                : http.PostAsync(url, content).GetAwaiter().GetResult();
+            using var content = new StringContent(json ?? string.Empty, Encoding.UTF8, "application/json");
+            using var httpRequest = new HttpRequestMessage(httpMethod, url) { Content = content };
+            using var httpResponse = http.SendAsync(httpRequest).GetAwaiter().GetResult();
 
             var responseContent = httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             _logger.Info("Response: {0}", responseContent);

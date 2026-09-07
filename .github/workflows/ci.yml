@@ -41,16 +41,14 @@ env:
   DOTNET_NOLOGO: "true"
   NUGET_XMLDOC_MODE: skip
   FORCE_COLOR: "0"
-  # Pin matches global.json (Ash). TFM is net10.0, not net10.
+  # Pin matches global.json. SDK 10.0.400, TFM net10.0.
   DOTNET_VERSION: "10.0.400"
   NODE_VERSION: "20.11.1"
   YARN_VERSION: "1.22.19"
   READARRVERSION: "0.4.19.${{ github.run_number }}"
   BUILD_SOURCEBRANCHNAME: ${{ github.ref_name }}
-  # 80% is Ash's new-slice local gate. Whole-tree Coverlet on published
-  # linux-x64 tests currently measures ~44% (Host/Http/Windows/Update
-  # drag the merge down). Fail the job if the tree drops below the floor;
-  # keep reporting the 80% goal in the summary.
+  # 80% is the new-slice local gate. CI fails only if merged whole-tree
+  # Coverlet is below COVERAGE_FLOOR; the 80% goal is reported.
   COVERAGE_THRESHOLD: "80"
   COVERAGE_FLOOR: "40"
   REGISTRY: ghcr.io

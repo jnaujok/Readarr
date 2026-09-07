@@ -48,7 +48,7 @@ namespace NzbDrone.Integration.Test
 
         protected override void InitializeTestTarget()
         {
-            // Make sure tasks have been initialized so the config put below doesn't cause errors
+            // Wait until scheduled tasks are registered before configuring indexers.
             WaitForCompletion(() => Tasks.All().SelectList(x => x.TaskName).Contains("RssSync"), 30000);
 
             var indexer = Indexers.Schema().FirstOrDefault(i => i.Implementation == nameof(Newznab));
