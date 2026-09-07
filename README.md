@@ -10,6 +10,8 @@ It is still Readarr: authors, books, editions, quality profiles, download client
 
 **User guide:** open [`docs/user-guide/index.html`](docs/user-guide/index.html) in a browser (no build step). It covers metadata, wanted formats, naming, unmapped files, and the settings that changed in this rewrite.
 
+**Diagrams:** [`DIAGRAMS.md`](DIAGRAMS.md) (architecture, wanted formats, grab/import, naming, CI).
+
 ```mermaid
 flowchart LR
     subgraph sources [Sources]
@@ -117,7 +119,7 @@ House style matches the original *arr stack: `NzbDrone.*` namespaces, NUnit, Flu
 - UI: `frontend/`
 - Coverage gate for new slices: Coverlet ≥ 80%
 
-Operator documentation lives in [`docs/user-guide/`](docs/user-guide/index.html). See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution notes.
+Operator documentation lives in [`docs/user-guide/`](docs/user-guide/index.html). Architecture diagrams: [`DIAGRAMS.md`](DIAGRAMS.md). See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution notes.
 
 ## Lineage
 

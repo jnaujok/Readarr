@@ -4,7 +4,7 @@ We're always looking for people to help make Readarr even better, there are a nu
 
 ## Documentation
 
-Operator documentation for this fork is the HTML user guide in [`docs/user-guide/index.html`](docs/user-guide/index.html). Open that file in a browser; it does not need a build step.
+Operator documentation for this fork is the HTML user guide in [`docs/user-guide/index.html`](docs/user-guide/index.html). Open that file in a browser; it does not need a build step. Architecture and behaviour diagrams are in [`DIAGRAMS.md`](DIAGRAMS.md).
 
 The historical Servarr wiki remains at [wiki.servarr.com/readarr](https://wiki.servarr.com/readarr) for upstream *arr patterns (indexers, download clients). Prefer the local guide for metadata, wanted formats, naming tokens, and other behaviour that changed in this rewrite.
 
