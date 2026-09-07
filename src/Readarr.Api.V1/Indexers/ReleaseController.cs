@@ -114,16 +114,10 @@ namespace Readarr.Api.V1.Indexers
                         var book = _bookService.GetBook(release.BookId.Value);
 
                         books = new List<Book> { book };
+                        remoteBook.Author ??= _authorService.GetAuthor(book.AuthorId);
                     }
 
                     remoteBook.Books = books;
-                }
-
-                if (remoteBook.Books.Empty() && release.BookId.HasValue)
-                {
-                    var book = _bookService.GetBook(release.BookId.Value);
-                    remoteBook.Books = new List<Book> { book };
-                    remoteBook.Author ??= _authorService.GetAuthor(book.AuthorId);
                 }
 
                 if (remoteBook.Books.Empty())

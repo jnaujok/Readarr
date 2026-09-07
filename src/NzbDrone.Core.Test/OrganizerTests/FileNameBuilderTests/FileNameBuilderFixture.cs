@@ -793,6 +793,7 @@ namespace NzbDrone.Core.Test.OrganizerTests.FileNameBuilderTests
         [TestCase("Hybrid Theory (Unabridged)", "Hybrid Theory")]
         [TestCase("The Book: Kindle Edition", "The Book")]
         [TestCase("Some Title", "Some Title")]
+        [TestCase("Notebook", "Notebook")]
         [TestCase("", "")]
         [TestCase(null, "")]
         public void should_strip_edition_junk_from_title(string title, string expected)

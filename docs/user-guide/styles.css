@@ -17,6 +17,10 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 body {
   margin: 0;
   color: var(--ink);
@@ -238,7 +242,7 @@ figure {
 
 figure img {
   display: block;
-  width: 100%;
+  max-width: 100%;
   height: auto;
   border: 1px solid var(--line);
 }
@@ -262,4 +266,5 @@ figcaption {
   .layout { display: block; }
   nav.sidebar { display: none; }
   a { color: inherit; }
+  .pager a { text-decoration: underline; }
 }

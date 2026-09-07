@@ -44,7 +44,7 @@ function getCommonFolder(paths) {
     const lastSep = Math.max(common.lastIndexOf('/'), common.lastIndexOf('\\'));
 
     if (lastSep <= 0) {
-      return folders[0];
+      return null;
     }
 
     common = common.substring(0, lastSep);

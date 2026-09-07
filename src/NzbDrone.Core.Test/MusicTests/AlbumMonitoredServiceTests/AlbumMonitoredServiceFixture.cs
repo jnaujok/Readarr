@@ -97,6 +97,19 @@ namespace NzbDrone.Core.Test.MusicTests.BookMonitoredServiceTests
         }
 
         [Test]
+        public void should_treat_null_books_to_monitor_as_empty()
+        {
+            Subject.SetBookMonitoredStatus(_author, new MonitoringOptions
+            {
+                Monitor = MonitorTypes.All,
+                BooksToMonitor = null
+            });
+
+            Mocker.GetMock<IBookService>()
+                  .Verify(v => v.UpdateBook(It.IsAny<Book>()), Times.AtLeastOnce());
+        }
+
+        [Test]
         public void should_apply_any_edition_ok_from_add_options()
         {
             _books.ForEach(b => b.AnyEditionOk = true);

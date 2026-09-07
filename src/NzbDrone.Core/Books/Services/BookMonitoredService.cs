@@ -27,8 +27,10 @@ namespace NzbDrone.Core.Books
         {
             var addOptions = monitoringOptions as AddAuthorOptions;
 
+            var booksToMonitor = monitoringOptions?.BooksToMonitor ?? new List<string>();
+
             if (monitoringOptions != null &&
-                (monitoringOptions.BooksToMonitor.Any() ||
+                (booksToMonitor.Any() ||
                  monitoringOptions.Monitor != MonitorTypes.Unknown ||
                  addOptions != null))
             {
@@ -40,7 +42,7 @@ namespace NzbDrone.Core.Books
 
                 var booksWithoutFiles = books.Where(c => !booksWithFiles.Select(e => e.Id).Contains(c.Id) && c.ReleaseDate <= DateTime.UtcNow).ToList();
 
-                var monitoredBooks = monitoringOptions.BooksToMonitor;
+                var monitoredBooks = booksToMonitor;
 
                 if (addOptions != null)
                 {

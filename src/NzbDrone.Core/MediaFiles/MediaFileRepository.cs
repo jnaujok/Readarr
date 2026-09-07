@@ -89,7 +89,16 @@ namespace NzbDrone.Core.MediaFiles
                 return new List<BookFile>();
             }
 
-            return Query(Builder().Where<Book>(b => ids.Contains(b.Id)));
+            const int chunkSize = 400;
+            var files = new List<BookFile>();
+
+            for (var i = 0; i < ids.Count; i += chunkSize)
+            {
+                var chunk = ids.Skip(i).Take(chunkSize).ToList();
+                files.AddRange(Query(Builder().Where<Book>(b => chunk.Contains(b.Id))));
+            }
+
+            return files;
         }
 
         public List<BookFile> GetFilesByEdition(int editionId)
