@@ -38,7 +38,7 @@ namespace NzbDrone.Core.Organizer
         private static readonly Regex TitleRegex = new Regex(@"\{(?<prefix>[- ._\[(]*)(?<token>(?:[a-z0-9]+)(?:(?<separator>[- ._]+)(?:[a-z0-9]+))?)(?::(?<customFormat>[a-z0-9]+))?(?:\|(?<fallback>[^}]+))?(?<suffix>[- ._)\]]*)\}",
                                                              RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private static readonly Regex EditionJunkRegex = new Regex(@"\s*[\(\[]?\s*(?:unabridged|abridged|kindle edition|nook|ebook|audiobook|audio cd|audio cassette|audible audio|large print|illustrated edition|revised edition|first edition|second edition|third edition|\d+(?:st|nd|rd|th) edition)\s*[\)\]]?",
+        private static readonly Regex EditionJunkRegex = new Regex(@"\s*[\(\[]?\s*\b(?:unabridged|abridged|kindle edition|nook|ebook|audiobook|audio cd|audio cassette|audible audio|large print|illustrated edition|revised edition|first edition|second edition|third edition|\d+(?:st|nd|rd|th) edition)\b\s*[\)\]]?",
                                                             RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public static readonly Regex PartRegex = new Regex(@"\{(?<prefix>[^{]*?)(?<token1>PartNumber|PartCount)(?::(?<customFormat1>[a-z0-9]+))?(?<separator>.*(?=PartNumber|PartCount))?((?<token2>PartNumber|PartCount)(?::(?<customFormat2>[a-z0-9]+))?)?(?<suffix>[^}]*)\}",

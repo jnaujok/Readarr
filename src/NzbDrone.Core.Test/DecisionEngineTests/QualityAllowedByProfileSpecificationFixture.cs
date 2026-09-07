@@ -76,5 +76,18 @@ namespace NzbDrone.Core.Test.DecisionEngineTests
             decision.Accepted.Should().BeTrue();
             _remoteBook.ParsedBookInfo.Quality.Quality.Should().Be(Quality.EPUB);
         }
+
+        [Test]
+        public void should_map_to_best_allowed_quality_when_several_listed_formats_are_in_profile()
+        {
+            _remoteBook.ParsedBookInfo.Quality.Quality = Quality.PDF;
+            _remoteBook.ParsedBookInfo.Qualities = new List<Quality> { Quality.PDF, Quality.EPUB, Quality.AZW3 };
+            _remoteBook.Author.QualityProfile.Value.Items = Qualities.QualityFixture.GetDefaultQualities(Quality.EPUB, Quality.AZW3);
+
+            var decision = Subject.IsSatisfiedBy(_remoteBook, null);
+
+            decision.Accepted.Should().BeTrue();
+            _remoteBook.ParsedBookInfo.Quality.Quality.Should().Be(Quality.AZW3);
+        }
     }
 }

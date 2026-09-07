@@ -197,7 +197,7 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
 
             var bestDistance = localBookRelease.Edition != null ? localBookRelease.Distance.NormalizedDistance() : 1.0;
             seenCandidate = false;
-            var bestBookId = localBookRelease.Edition?.Book?.Value?.Id;
+            var bestBookId = localBookRelease.Edition != null ? localBookRelease.Edition.BookId : (int?)null;
             var ambiguous = false;
 
             foreach (var candidateRelease in candidateReleases)
@@ -214,7 +214,7 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
 
                 var distance = DistanceCalculator.BookDistance(allLocalTracks, release);
                 var currDistance = distance.NormalizedDistance();
-                var candidateBookId = release.Book?.Value?.Id ?? 0;
+                var candidateBookId = release.BookId;
 
                 rwatch.Stop();
                 _logger.Debug("Release {0} has distance {1} vs best distance {2} [{3}ms]",
@@ -222,7 +222,8 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
                               currDistance,
                               bestDistance,
                               rwatch.ElapsedMilliseconds);
-                if (currDistance < bestDistance - 0.001)
+                if (currDistance < bestDistance &&
+                    (currDistance == 0.0 || currDistance < bestDistance - 0.001))
                 {
                     bestDistance = currDistance;
                     localBookRelease.Distance = distance;

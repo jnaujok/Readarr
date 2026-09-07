@@ -237,7 +237,7 @@ namespace NzbDrone.Core.Books
             var inner = new PagingSpec<Book>
             {
                 Page = 1,
-                PageSize = 100000,
+                PageSize = int.MaxValue,
                 SortKey = pagingSpec.SortKey,
                 SortDirection = pagingSpec.SortDirection,
                 FilterExpressions = pagingSpec.FilterExpressions
@@ -301,7 +301,10 @@ namespace NzbDrone.Core.Books
                 return withoutFiles;
             }
 
-            withoutFiles.Records = withoutFiles.Records.Concat(extra).ToList();
+            var merged = withoutFiles.Records.Concat(extra);
+            withoutFiles.Records = withoutFiles.SortDirection == SortDirection.Descending
+                ? merged.OrderByDescending(b => b.Title).ThenByDescending(b => b.Id).ToList()
+                : merged.OrderBy(b => b.Title).ThenBy(b => b.Id).ToList();
             withoutFiles.TotalRecords = withoutFiles.Records.Count;
             return withoutFiles;
         }
