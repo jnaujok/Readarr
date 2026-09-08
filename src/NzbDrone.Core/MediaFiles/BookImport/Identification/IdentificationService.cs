@@ -18,6 +18,8 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
 
     public class IdentificationService : IIdentificationService
     {
+        private const double AmbiguousDistanceEpsilon = 0.001;
+
         private readonly ITrackGroupingService _trackGroupingService;
         private readonly IMetadataTagService _metadataTagService;
         private readonly IAugmentingService _augmentingService;
@@ -222,8 +224,7 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
                               currDistance,
                               bestDistance,
                               rwatch.ElapsedMilliseconds);
-                if (currDistance < bestDistance &&
-                    (currDistance == 0.0 || currDistance < bestDistance - 0.001))
+                if (IsBetterMatchDistance(currDistance, bestDistance))
                 {
                     bestDistance = currDistance;
                     localBookRelease.Distance = distance;
@@ -236,7 +237,7 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
                         break;
                     }
                 }
-                else if (Math.Abs(currDistance - bestDistance) <= 0.001 &&
+                else if (Math.Abs(currDistance - bestDistance) <= AmbiguousDistanceEpsilon &&
                          bestBookId.HasValue &&
                          candidateBookId != bestBookId.Value)
                 {
@@ -257,6 +258,16 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Identification
 
             watch.Stop();
             _logger.Debug($"Best release: {localBookRelease.Edition} Distance {localBookRelease.Distance.NormalizedDistance()} found in {watch.ElapsedMilliseconds}ms");
+        }
+
+        internal static bool IsBetterMatchDistance(double current, double best)
+        {
+            if (current == 0.0 && best > 0.0)
+            {
+                return true;
+            }
+
+            return current < best - AmbiguousDistanceEpsilon;
         }
     }
 }

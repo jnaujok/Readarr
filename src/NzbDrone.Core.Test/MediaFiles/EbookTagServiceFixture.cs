@@ -12,6 +12,7 @@ using NzbDrone.Core.Books.Calibre;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.MediaFiles.EbookMetadata;
+using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.Test.Framework;
 using VersOne.Epub.Schema;
@@ -101,6 +102,37 @@ namespace NzbDrone.Core.Test.MediaFiles.AudioTagServiceFixture
 
             Mocker.GetMock<IEbookFileMetadataWriter>()
                 .Verify(v => v.Write(It.IsAny<string>(), It.IsAny<EbookFileMetadata>(), It.IsAny<bool>()), Times.Never());
+        }
+
+        [Test]
+        public void diff_metadata_is_empty_when_tags_match()
+        {
+            var current = new ParsedTrackInfo
+            {
+                BookTitle = "Pride and Prejudice",
+                Authors = new List<string> { "Jane Austen" },
+                Isbn = "9781455546176"
+            };
+            var desired = new EbookFileMetadata
+            {
+                Title = "Pride and Prejudice",
+                Authors = { "Jane Austen" },
+                Isbn = "9781455546176"
+            };
+
+            EBookTagService.DiffMetadata(current, desired).Should().BeEmpty();
+        }
+
+        [Test]
+        public void diff_metadata_reports_title_change()
+        {
+            var current = new ParsedTrackInfo { BookTitle = "Old", Authors = new List<string> { "A" } };
+            var desired = new EbookFileMetadata { Title = "New", Authors = { "A" } };
+
+            var diff = EBookTagService.DiffMetadata(current, desired);
+            diff.Should().ContainKey("Title");
+            diff["Title"].Item1.Should().Be("Old");
+            diff["Title"].Item2.Should().Be("New");
         }
     }
 }

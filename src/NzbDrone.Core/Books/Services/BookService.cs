@@ -47,6 +47,9 @@ namespace NzbDrone.Core.Books
     public class BookService : IBookService,
                                 IHandle<AuthorDeletedEvent>
     {
+        // Bound the inner fetch so missing-book queries cannot materialize unbounded rows.
+        private const int MissingBooksQueryPageSize = 100000;
+
         private readonly IBookRepository _bookRepository;
         private readonly IEditionService _editionService;
         private readonly IAuthorService _authorService;
@@ -237,7 +240,7 @@ namespace NzbDrone.Core.Books
             var inner = new PagingSpec<Book>
             {
                 Page = 1,
-                PageSize = int.MaxValue,
+                PageSize = MissingBooksQueryPageSize,
                 SortKey = pagingSpec.SortKey,
                 SortDirection = pagingSpec.SortDirection,
                 FilterExpressions = pagingSpec.FilterExpressions
@@ -301,12 +304,31 @@ namespace NzbDrone.Core.Books
                 return withoutFiles;
             }
 
-            var merged = withoutFiles.Records.Concat(extra);
-            withoutFiles.Records = withoutFiles.SortDirection == SortDirection.Descending
-                ? merged.OrderByDescending(b => b.Title).ThenByDescending(b => b.Id).ToList()
-                : merged.OrderBy(b => b.Title).ThenBy(b => b.Id).ToList();
+            withoutFiles.Records = SortBooks(withoutFiles.Records.Concat(extra), withoutFiles).ToList();
             withoutFiles.TotalRecords = withoutFiles.Records.Count;
             return withoutFiles;
+        }
+
+        private static IEnumerable<Book> SortBooks(IEnumerable<Book> books, PagingSpec<Book> spec)
+        {
+            var descending = spec.SortDirection == SortDirection.Descending;
+            var key = spec.SortKey?.Replace("book.", string.Empty, StringComparison.OrdinalIgnoreCase) ?? "title";
+
+            IOrderedEnumerable<Book> ordered;
+            if (key.Equals("id", StringComparison.OrdinalIgnoreCase))
+            {
+                ordered = descending ? books.OrderByDescending(b => b.Id) : books.OrderBy(b => b.Id);
+            }
+            else if (key.Equals("releasedate", StringComparison.OrdinalIgnoreCase))
+            {
+                ordered = descending ? books.OrderByDescending(b => b.ReleaseDate) : books.OrderBy(b => b.ReleaseDate);
+            }
+            else
+            {
+                ordered = descending ? books.OrderByDescending(b => b.Title) : books.OrderBy(b => b.Title);
+            }
+
+            return descending ? ordered.ThenByDescending(b => b.Id) : ordered.ThenBy(b => b.Id);
         }
 
         public List<Book> BooksBetweenDates(DateTime start, DateTime end, bool includeUnmonitored)
