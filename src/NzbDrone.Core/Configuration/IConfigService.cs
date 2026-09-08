@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NzbDrone.Common.Http.Proxy;
 using NzbDrone.Core.MediaFiles;
+using NzbDrone.Core.MediaFiles.Ffmpeg;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Security;
 
@@ -28,6 +29,9 @@ namespace NzbDrone.Core.Configuration
         ProperDownloadTypes DownloadPropersAndRepacks { get; set; }
         bool CreateEmptyAuthorFolders { get; set; }
         bool OmitAuthorFolderOnRename { get; set; }
+        bool MergeAudiobookParts { get; set; }
+        string FfmpegPath { get; set; }
+        AudiobookMergeFormat AudiobookMergeFormat { get; set; }
         bool DeleteEmptyFolders { get; set; }
         FileDateType FileDate { get; set; }
         bool SkipFreeSpaceCheckWhenImporting { get; set; }

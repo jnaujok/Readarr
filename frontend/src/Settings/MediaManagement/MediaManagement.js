@@ -137,6 +137,64 @@ class MediaManagement extends Component {
                         size={sizes.MEDIUM}
                       >
                         <FormLabel>
+                          {translate('MergeAudiobookParts')}
+                        </FormLabel>
+
+                        <FormInputGroup
+                          type={inputTypes.CHECK}
+                          name="mergeAudiobookParts"
+                          helpText={translate('MergeAudiobookPartsHelpText')}
+                          onChange={onInputChange}
+                          {...settings.mergeAudiobookParts}
+                        />
+                      </FormGroup>
+
+                      <FormGroup
+                        advancedSettings={advancedSettings}
+                        isAdvanced={true}
+                        size={sizes.MEDIUM}
+                      >
+                        <FormLabel>
+                          {translate('FfmpegPath')}
+                        </FormLabel>
+
+                        <FormInputGroup
+                          type={inputTypes.TEXT}
+                          name="ffmpegPath"
+                          helpText={translate('FfmpegPathHelpText')}
+                          onChange={onInputChange}
+                          {...settings.ffmpegPath}
+                        />
+                      </FormGroup>
+
+                      <FormGroup
+                        advancedSettings={advancedSettings}
+                        isAdvanced={true}
+                        size={sizes.MEDIUM}
+                      >
+                        <FormLabel>
+                          {translate('AudiobookMergeFormat')}
+                        </FormLabel>
+
+                        <FormInputGroup
+                          type={inputTypes.SELECT}
+                          name="audiobookMergeFormat"
+                          values={[
+                            { key: 0, value: 'M4B' },
+                            { key: 1, value: 'MP3' }
+                          ]}
+                          helpText={translate('AudiobookMergeFormatHelpText')}
+                          onChange={onInputChange}
+                          {...settings.audiobookMergeFormat}
+                        />
+                      </FormGroup>
+
+                      <FormGroup
+                        advancedSettings={advancedSettings}
+                        isAdvanced={true}
+                        size={sizes.MEDIUM}
+                      >
+                        <FormLabel>
                           {translate('DeleteEmptyFolders')}
                         </FormLabel>
 
