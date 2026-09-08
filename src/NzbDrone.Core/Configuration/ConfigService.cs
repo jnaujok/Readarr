@@ -165,6 +165,27 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("OmitAuthorFolderOnRename", value); }
         }
 
+        public bool MergeAudiobookParts
+        {
+            get { return GetValueBoolean("MergeAudiobookParts", false); }
+
+            set { SetValue("MergeAudiobookParts", value); }
+        }
+
+        public string FfmpegPath
+        {
+            get { return GetValue("FfmpegPath", string.Empty); }
+
+            set { SetValue("FfmpegPath", value); }
+        }
+
+        public MediaFiles.Ffmpeg.AudiobookMergeFormat AudiobookMergeFormat
+        {
+            get { return GetValueEnum("AudiobookMergeFormat", MediaFiles.Ffmpeg.AudiobookMergeFormat.M4b); }
+
+            set { SetValue("AudiobookMergeFormat", value); }
+        }
+
         public bool DeleteEmptyFolders
         {
             get { return GetValueBoolean("DeleteEmptyFolders", false); }
