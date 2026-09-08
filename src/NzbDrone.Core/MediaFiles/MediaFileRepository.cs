@@ -89,12 +89,14 @@ namespace NzbDrone.Core.MediaFiles
                 return new List<BookFile>();
             }
 
-            const int chunkSize = 400;
+            // SQLite allows at most 999 parameters per statement; stay well under that.
+            const int sqliteContainsChunkSize = 400;
+            ids = ids.Distinct().ToList();
             var files = new List<BookFile>();
 
-            for (var i = 0; i < ids.Count; i += chunkSize)
+            for (var i = 0; i < ids.Count; i += sqliteContainsChunkSize)
             {
-                var chunk = ids.Skip(i).Take(chunkSize).ToList();
+                var chunk = ids.Skip(i).Take(sqliteContainsChunkSize).ToList();
                 files.AddRange(Query(Builder().Where<Book>(b => chunk.Contains(b.Id))));
             }
 

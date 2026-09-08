@@ -41,9 +41,18 @@ namespace NzbDrone.Core.DecisionEngine.Specifications
 
             if (!allowed.Contains(subject.ParsedBookInfo.Quality.Quality))
             {
-                var preferred = allowed
-                    .OrderByDescending(q => profile.GetIndex(q).Index)
-                    .First();
+                var preferred = allowed[0];
+                var bestIndex = profile.GetIndex(preferred).Index;
+                for (var i = 1; i < allowed.Count; i++)
+                {
+                    var index = profile.GetIndex(allowed[i]).Index;
+                    if (index > bestIndex)
+                    {
+                        preferred = allowed[i];
+                        bestIndex = index;
+                    }
+                }
+
                 subject.ParsedBookInfo.Quality = new QualityModel(preferred, subject.ParsedBookInfo.Quality.Revision);
             }
 

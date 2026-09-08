@@ -203,6 +203,32 @@ namespace NzbDrone.Core.MediaFiles
             }
 
             var metadata = BuildFileMetadata(file, updateCover);
+            var changes = new Dictionary<string, Tuple<string, string>>();
+
+            if (_diskProvider.FileExists(file.Path))
+            {
+                try
+                {
+                    changes = DiffMetadata(ReadTags(_diskProvider.GetFileInfo(file.Path)), metadata);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug(ex, "Could not read existing tags from {0}; rewriting", file.Path);
+                    changes["File"] = Tuple.Create("unreadable", metadata.Title);
+                }
+            }
+            else
+            {
+                changes["File"] = Tuple.Create((string)null, metadata.Title);
+            }
+
+            var coverPending = updateCover && metadata.Cover != null && metadata.Cover.Length > 0;
+            if (!changes.Any() && !coverPending)
+            {
+                _logger.Debug("No tags update for {0} due to no difference", file.Path);
+                return;
+            }
+
             _rootFolderWatchingService.ReportFileSystemChangeBeginning(file.Path);
             _ebookFileMetadataWriter.Write(file.Path, metadata, updateCover);
 
@@ -215,7 +241,7 @@ namespace NzbDrone.Core.MediaFiles
                 _mediaFileService.Update(file);
             }
 
-            _eventAggregator.PublishEvent(new BookFileRetaggedEvent(file.Author.Value, file, new Dictionary<string, Tuple<string, string>>(), false));
+            _eventAggregator.PublishEvent(new BookFileRetaggedEvent(file.Author.Value, file, changes, false));
         }
 
         private EbookFileMetadata BuildFileMetadata(BookFile file, bool updateCover)
@@ -261,16 +287,22 @@ namespace NzbDrone.Core.MediaFiles
 
         private IEnumerable<RetagBookFilePreview> GetPreviews(List<BookFile> files)
         {
-            foreach (var preview in GetLocalPreviews(files))
+            var calibrePairs = files
+                .Where(x => x.CalibreId > 0)
+                .Select(x => Tuple.Create(x, _rootFolderService.GetBestRootFolder(x.Path)))
+                .Where(x => x.Item2 != null && x.Item2.IsCalibreLibrary && x.Item2.CalibreSettings != null)
+                .ToList();
+
+            var calibreFileIds = new HashSet<int>(calibrePairs.Select(x => x.Item1.Id));
+
+            foreach (var preview in GetLocalPreviews(files.Where(f => !calibreFileIds.Contains(f.Id)).ToList()))
             {
                 yield return preview;
             }
 
-            var calibreFiles = files.Where(x => x.CalibreId > 0).OrderBy(x => x.Edition.Value.Title).ToList();
+            var calibreFiles = calibrePairs.Select(x => x.Item1).OrderBy(x => x.Edition.Value.Title).ToList();
 
-            var rootFolderPairs = calibreFiles.Select(x => Tuple.Create(x, _rootFolderService.GetBestRootFolder(x.Path)));
-
-            var rootFolderGroups = rootFolderPairs.GroupBy(x => x.Item2.Path);
+            var rootFolderGroups = calibrePairs.GroupBy(x => x.Item2.Path);
 
             var calibreBooks = new List<CalibreBook>();
             foreach (var group in rootFolderGroups)
@@ -296,7 +328,10 @@ namespace NzbDrone.Core.MediaFiles
                     seriesIndex = index;
                 }
 
-                var oldTags = dict[file.CalibreId];
+                if (!dict.TryGetValue(file.CalibreId, out var oldTags))
+                {
+                    continue;
+                }
 
                 var textInfo = CultureInfo.InvariantCulture.TextInfo;
                 var genres = book.Genres.Select(x => textInfo.ToTitleCase(x.Replace('-', ' '))).ToList();
@@ -339,20 +374,21 @@ namespace NzbDrone.Core.MediaFiles
 
         private IEnumerable<RetagBookFilePreview> GetLocalPreviews(List<BookFile> files)
         {
-            foreach (var file in files.Where(x => x.CalibreId == 0 && _ebookFileMetadataWriter.CanWrite(x.Path)))
+            foreach (var file in files.Where(x => _ebookFileMetadataWriter.CanWrite(x.Path)))
             {
-                var current = ReadTags(_diskProvider.GetFileInfo(file.Path));
-                var desired = BuildFileMetadata(file, false);
-                var changes = new Dictionary<string, Tuple<string, string>>();
+                ParsedTrackInfo current;
+                try
+                {
+                    current = ReadTags(_diskProvider.GetFileInfo(file.Path));
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug(ex, "Could not read tags from {0}", file.Path);
+                    continue;
+                }
 
-                AddChange(changes, "Title", current.BookTitle, desired.Title);
-                var currentAuthors = current.Authors != null && current.Authors.Any() ? string.Join(" / ", current.Authors) : null;
-                var desiredAuthors = desired.Authors != null && desired.Authors.Any() ? string.Join(" / ", desired.Authors) : null;
-                AddChange(changes, "Author", currentAuthors, desiredAuthors);
-                AddChange(changes, "Publisher", current.Publisher, desired.Publisher);
-                AddChange(changes, "Isbn", current.Isbn, desired.Isbn);
-                AddChange(changes, "Asin", current.Asin, desired.Asin);
-                AddChange(changes, "Series", current.SeriesTitle, desired.Series);
+                var desired = BuildFileMetadata(file, false);
+                var changes = DiffMetadata(current, desired);
 
                 if (changes.Any())
                 {
@@ -366,6 +402,25 @@ namespace NzbDrone.Core.MediaFiles
                     };
                 }
             }
+        }
+
+        internal static Dictionary<string, Tuple<string, string>> DiffMetadata(ParsedTrackInfo current, EbookFileMetadata desired)
+        {
+            var changes = new Dictionary<string, Tuple<string, string>>();
+            if (current == null || desired == null)
+            {
+                return changes;
+            }
+
+            AddChange(changes, "Title", current.BookTitle, desired.Title);
+            var currentAuthors = current.Authors != null && current.Authors.Any() ? string.Join(" / ", current.Authors) : null;
+            var desiredAuthors = desired.Authors != null && desired.Authors.Any() ? string.Join(" / ", desired.Authors) : null;
+            AddChange(changes, "Author", currentAuthors, desiredAuthors);
+            AddChange(changes, "Publisher", current.Publisher, desired.Publisher);
+            AddChange(changes, "Isbn", current.Isbn, desired.Isbn);
+            AddChange(changes, "Asin", current.Asin, desired.Asin);
+            AddChange(changes, "Series", current.SeriesTitle, desired.Series);
+            return changes;
         }
 
         private static void AddChange(Dictionary<string, Tuple<string, string>> changes, string name, string oldValue, string newValue)

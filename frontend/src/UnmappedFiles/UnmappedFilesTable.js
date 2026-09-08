@@ -43,6 +43,7 @@ function getCommonFolder(paths) {
     common = common.substring(0, j);
     const lastSep = Math.max(common.lastIndexOf('/'), common.lastIndexOf('\\'));
 
+    // Distinct roots have no shared folder; InteractiveImportModal then shows the folder picker.
     if (lastSep <= 0) {
       return null;
     }
@@ -177,7 +178,7 @@ class UnmappedFilesTable extends Component {
 
     this.setState({
       isInteractiveImportModalOpen: true,
-      mapFolder: folder
+      mapFolder: folder || null
     });
   };
 

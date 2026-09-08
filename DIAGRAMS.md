@@ -52,11 +52,11 @@ flowchart TB
 ```mermaid
 flowchart LR
     subgraph build [docker build]
-        Node[node:20 webpack UI]
-        SDK[dotnet/sdk:10.0 linux-x64]
+        Node[node:20.11.1-bookworm webpack UI]
+        SDK[mcr.microsoft.com/dotnet/sdk:10.0]
         Node --> SDK
     end
-    subgraph runtime [dotnet/aspnet:10.0]
+    subgraph runtime [mcr.microsoft.com/dotnet/aspnet:10.0]
         Apt[curl tzdata ca-certificates libsqlite3-0]
         App[/app Readarr.dll]
         Apt --> App
