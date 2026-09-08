@@ -65,7 +65,7 @@ flowchart LR
     Cfg["/config"] --> App
 ```
 
-`libsqlite3-0` is required because `System.Data.SQLite.Core.Servarr` loads `libsqlite3.so.0`.
+`libsqlite3-0` is required because `System.Data.SQLite.Core.Servarr` loads `libsqlite3.so.0`. The `ffmpeg` package provides `ffmpeg` and `ffprobe` for optional audiobook part merging.
 
 ## Domain model
 
