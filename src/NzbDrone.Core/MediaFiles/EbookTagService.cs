@@ -5,14 +5,19 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using NLog;
+using NzbDrone.Common.Disk;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Instrumentation.Extensions;
 using NzbDrone.Common.Serializer;
 using NzbDrone.Core.Books;
 using NzbDrone.Core.Books.Calibre;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles.Azw;
 using NzbDrone.Core.MediaFiles.Commands;
+using NzbDrone.Core.MediaFiles.EbookMetadata;
+using NzbDrone.Core.MediaFiles.Events;
+using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.RootFolders;
@@ -40,6 +45,11 @@ namespace NzbDrone.Core.MediaFiles
         private readonly IRootFolderService _rootFolderService;
         private readonly IConfigService _configService;
         private readonly ICalibreProxy _calibre;
+        private readonly IEbookFileMetadataWriter _ebookFileMetadataWriter;
+        private readonly IMapCoversToLocal _mediaCoverService;
+        private readonly IDiskProvider _diskProvider;
+        private readonly IRootFolderWatchingService _rootFolderWatchingService;
+        private readonly IEventAggregator _eventAggregator;
         private readonly Logger _logger;
 
         public EBookTagService(IAuthorService authorService,
@@ -47,6 +57,11 @@ namespace NzbDrone.Core.MediaFiles
             IRootFolderService rootFolderService,
             IConfigService configService,
             ICalibreProxy calibre,
+            IEbookFileMetadataWriter ebookFileMetadataWriter,
+            IMapCoversToLocal mediaCoverService,
+            IDiskProvider diskProvider,
+            IRootFolderWatchingService rootFolderWatchingService,
+            IEventAggregator eventAggregator,
             Logger logger)
         {
             _authorService = authorService;
@@ -54,7 +69,11 @@ namespace NzbDrone.Core.MediaFiles
             _rootFolderService = rootFolderService;
             _configService = configService;
             _calibre = calibre;
-
+            _ebookFileMetadataWriter = ebookFileMetadataWriter;
+            _mediaCoverService = mediaCoverService;
+            _diskProvider = diskProvider;
+            _rootFolderWatchingService = rootFolderWatchingService;
+            _eventAggregator = eventAggregator;
             _logger = logger;
         }
 
@@ -107,7 +126,7 @@ namespace NzbDrone.Core.MediaFiles
 
                 _logger.Debug($"Syncing ebook tags for {edition}");
 
-                foreach (var file in bookFiles.Where(x => x.CalibreId != 0))
+                foreach (var file in bookFiles)
                 {
                     // populate tracks (which should also have release/book/author set) because
                     // not all of the updates will have been committed to the database yet
@@ -139,7 +158,7 @@ namespace NzbDrone.Core.MediaFiles
 
             _logger.ProgressInfo("Re-tagging {0} ebook files for {1}", files.Count, author.Name);
 
-            foreach (var file in files.Where(x => x.CalibreId != 0))
+            foreach (var file in files)
             {
                 WriteTagsInternal(file, message.UpdateCovers, message.EmbedMetadata);
             }
@@ -158,7 +177,7 @@ namespace NzbDrone.Core.MediaFiles
 
                 _logger.ProgressInfo("Re-tagging all ebook files for author: {0}", author.Name);
 
-                foreach (var file in files.Where(x => x.CalibreId != 0))
+                foreach (var file in files)
                 {
                     WriteTagsInternal(file, message.UpdateCovers, message.EmbedMetadata);
                 }
@@ -169,23 +188,84 @@ namespace NzbDrone.Core.MediaFiles
 
         private void WriteTagsInternal(BookFile file, bool updateCover, bool embedMetadata)
         {
-            if (file.CalibreId == 0)
-            {
-                _logger.Trace($"No calibre id for {file.Path}, skipping writing tags");
-            }
-
             var rootFolder = _rootFolderService.GetBestRootFolder(file.Path);
 
-            if (rootFolder == null)
+            if (file.CalibreId != 0 && rootFolder != null && rootFolder.IsCalibreLibrary && rootFolder.CalibreSettings != null)
             {
-                throw new Exception($"File '{file.Path}' is not in a root folder.");
+                _calibre.SetFields(file, rootFolder.CalibreSettings, updateCover, embedMetadata);
+                return;
             }
 
-            _calibre.SetFields(file, rootFolder.CalibreSettings, updateCover, embedMetadata);
+            if (!_ebookFileMetadataWriter.CanWrite(file.Path))
+            {
+                _logger.Trace("No local metadata writer for {0}", file.Path);
+                return;
+            }
+
+            var metadata = BuildFileMetadata(file, updateCover);
+            _rootFolderWatchingService.ReportFileSystemChangeBeginning(file.Path);
+            _ebookFileMetadataWriter.Write(file.Path, metadata, updateCover);
+
+            var fileInfo = _diskProvider.GetFileInfo(file.Path);
+            file.Size = fileInfo.Length;
+            file.Modified = fileInfo.LastWriteTimeUtc;
+
+            if (file.Id > 0)
+            {
+                _mediaFileService.Update(file);
+            }
+
+            _eventAggregator.PublishEvent(new BookFileRetaggedEvent(file.Author.Value, file, new Dictionary<string, Tuple<string, string>>(), false));
+        }
+
+        private EbookFileMetadata BuildFileMetadata(BookFile file, bool updateCover)
+        {
+            var edition = file.Edition.Value;
+            var book = edition.Book.Value;
+            var seriesLink = book.SeriesLinks?.Value?.OrderBy(x => x.SeriesPosition)
+                .FirstOrDefault(x => x.Series.Value.Title.IsNotNullOrWhiteSpace());
+
+            byte[] cover = null;
+            var coverExtension = ".jpg";
+
+            if (updateCover)
+            {
+                var image = edition.Images.FirstOrDefault(x => x.CoverType == MediaCoverTypes.Cover);
+                if (image != null)
+                {
+                    var coverPath = _mediaCoverService.GetCoverPath(book.Id, MediaCoverEntity.Book, image.CoverType, image.Extension, null);
+                    if (_diskProvider.FileExists(coverPath))
+                    {
+                        cover = File.ReadAllBytes(coverPath);
+                        coverExtension = Path.GetExtension(coverPath);
+                    }
+                }
+            }
+
+            return new EbookFileMetadata
+            {
+                Title = edition.Title,
+                Authors = new List<string> { file.Author.Value.Name },
+                Publisher = edition.Publisher,
+                Language = edition.Language,
+                Description = edition.Overview,
+                Isbn = edition.Isbn13,
+                Asin = edition.Asin,
+                Series = seriesLink?.Series.Value.Title,
+                SeriesIndex = seriesLink?.Position,
+                ReleaseDate = book.ReleaseDate ?? edition.ReleaseDate,
+                Cover = cover,
+                CoverExtension = coverExtension
+            };
         }
 
         private IEnumerable<RetagBookFilePreview> GetPreviews(List<BookFile> files)
         {
+            foreach (var preview in GetLocalPreviews(files))
+            {
+                yield return preview;
+            }
+
             var calibreFiles = files.Where(x => x.CalibreId > 0).OrderBy(x => x.Edition.Value.Title).ToList();
 
             var rootFolderPairs = calibreFiles.Select(x => Tuple.Create(x, _rootFolderService.GetBestRootFolder(x.Path)));
@@ -254,6 +334,45 @@ namespace NzbDrone.Core.MediaFiles
                         Changes = diff
                     };
                 }
+            }
+        }
+
+        private IEnumerable<RetagBookFilePreview> GetLocalPreviews(List<BookFile> files)
+        {
+            foreach (var file in files.Where(x => x.CalibreId == 0 && _ebookFileMetadataWriter.CanWrite(x.Path)))
+            {
+                var current = ReadTags(_diskProvider.GetFileInfo(file.Path));
+                var desired = BuildFileMetadata(file, false);
+                var changes = new Dictionary<string, Tuple<string, string>>();
+
+                AddChange(changes, "Title", current.BookTitle, desired.Title);
+                var currentAuthors = current.Authors != null && current.Authors.Any() ? string.Join(" / ", current.Authors) : null;
+                var desiredAuthors = desired.Authors != null && desired.Authors.Any() ? string.Join(" / ", desired.Authors) : null;
+                AddChange(changes, "Author", currentAuthors, desiredAuthors);
+                AddChange(changes, "Publisher", current.Publisher, desired.Publisher);
+                AddChange(changes, "Isbn", current.Isbn, desired.Isbn);
+                AddChange(changes, "Asin", current.Asin, desired.Asin);
+                AddChange(changes, "Series", current.SeriesTitle, desired.Series);
+
+                if (changes.Any())
+                {
+                    yield return new RetagBookFilePreview
+                    {
+                        AuthorId = file.Author.Value.Id,
+                        BookId = file.Edition.Value.Id,
+                        BookFileId = file.Id,
+                        Path = file.Path,
+                        Changes = changes
+                    };
+                }
+            }
+        }
+
+        private static void AddChange(Dictionary<string, Tuple<string, string>> changes, string name, string oldValue, string newValue)
+        {
+            if (!string.Equals(oldValue ?? string.Empty, newValue ?? string.Empty, StringComparison.Ordinal))
+            {
+                changes[name] = Tuple.Create(oldValue, newValue);
             }
         }
 

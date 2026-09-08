@@ -55,7 +55,7 @@ namespace NzbDrone.Core.MediaFiles
             {
                 _audioTagService.WriteTags(bookFile, newDownload, force);
             }
-            else if (bookFile.CalibreId > 0)
+            else
             {
                 _eBookTagService.WriteTags(bookFile, newDownload, force);
             }
