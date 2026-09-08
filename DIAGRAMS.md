@@ -57,7 +57,7 @@ flowchart LR
         Node --> SDK
     end
     subgraph runtime [mcr.microsoft.com/dotnet/aspnet:10.0]
-        Apt[curl tzdata ca-certificates libsqlite3-0]
+        Apt[curl tzdata ca-certificates libsqlite3-0 ffmpeg]
         App[/app Readarr.dll]
         Apt --> App
     end

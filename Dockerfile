@@ -66,6 +66,7 @@ RUN apt-get update \
          tzdata \
          ca-certificates \
          libsqlite3-0 \
+         ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 8787 readarr \
     && useradd --uid 8787 --gid 8787 --create-home --home-dir /config readarr \
