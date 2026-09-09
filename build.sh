@@ -24,7 +24,7 @@ UpdateVersionNumber()
         sed -i'' -e "s/<AssemblyVersion>[0-9.*]\+<\/AssemblyVersion>/<AssemblyVersion>$READARRVERSION<\/AssemblyVersion>/g" src/Directory.Build.props
         sed -i'' -e "s/<AssemblyConfiguration>[\$()A-Za-z-]\+<\/AssemblyConfiguration>/<AssemblyConfiguration>${BUILD_SOURCEBRANCHNAME}<\/AssemblyConfiguration>/g" src/Directory.Build.props
         if [ -f distribution/osx/Readarr.app/Contents/Info.plist ]; then
-            sed -i'' -e "s/<string>10.0.0.0<\/string>/<string>$READARRVERSION<\/string>/g" distribution/osx/Readarr.app/Contents/Info.plist
+            sed -i'' -e "s/<string>1.0.0.3001<\/string>/<string>$READARRVERSION<\/string>/g" distribution/osx/Readarr.app/Contents/Info.plist
         else
             echo "Warning: distribution/osx/Readarr.app/Contents/Info.plist is missing; macOS version stamp skipped" >&2
         fi

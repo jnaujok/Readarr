@@ -18,10 +18,10 @@ name: CI
 
 on:
   push:
-    branches: [develop, main, master]
+    branches: [develop, release, main, master]
     tags: ["*"]
   pull_request:
-    branches: [develop, main, master]
+    branches: [develop, release, main, master]
     paths-ignore:
       - "**.md"
       - "src/NzbDrone.Core/Localization/Core/**"
@@ -45,7 +45,7 @@ env:
   DOTNET_VERSION: "10.0.400"
   NODE_VERSION: "20.11.1"
   YARN_VERSION: "1.22.19"
-  READARRVERSION: "0.4.19.${{ github.run_number }}"
+  READARRVERSION: "1.0.0.3001"
   BUILD_SOURCEBRANCHNAME: ${{ github.ref_name }}
   # 80% is the new-slice local gate. CI fails only if merged whole-tree
   # Coverlet is below COVERAGE_FLOOR; the 80% goal is reported.
@@ -101,6 +101,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Stamp READARRVERSION from git tag
+        if: github.ref_type == 'tag'
+        run: echo "READARRVERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -282,6 +286,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Stamp READARRVERSION from git tag
+        if: github.ref_type == 'tag'
+        run: echo "READARRVERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
       - name: Download backend output
         uses: actions/download-artifact@v4
         with:
@@ -381,6 +389,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Stamp READARRVERSION from git tag
+        if: github.ref_type == 'tag'
+        run: echo "READARRVERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
       - name: Image metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -390,7 +402,9 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha,prefix=sha-
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=semver,pattern={{version}}
+            type=raw,value=1.0.0.3001,enable=${{ github.ref == 'refs/heads/release' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/release' }}
           labels: |
             org.opencontainers.image.title=Readarr
             org.opencontainers.image.description=Ebook and audiobook collection manager
@@ -521,7 +535,7 @@ jobs:
           retention-days: 30
 
 # Local reproduction (Linux x86_64):
-#   export READARRVERSION=0.4.19.0 BUILD_SOURCEBRANCHNAME=develop
+#   export READARRVERSION=1.0.0.3001 BUILD_SOURCEBRANCHNAME=develop
 #   yarn install --frozen-lockfile && yarn lint && yarn stylelint-linux && yarn run build --env production
 #   ./build.sh --backend --packages -r linux-x64 -f net10.0
 #   dotnet test _tests/net10.0/linux-x64/publish/Readarr.Core.Test.dll --settings src/coverlet.ci.runsettings --collect "XPlat Code Coverage"

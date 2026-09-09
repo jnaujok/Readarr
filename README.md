@@ -87,7 +87,7 @@ dotnet build src/Readarr.sln -c Release
 dotnet test src/NzbDrone.Core.Test/NzbDrone.Core.Test.csproj -c Release --filter "FullyQualifiedName!~Integration"
 ```
 
-The default branch is `develop`.
+The default branch is `develop`. Official packaged releases are cut from the `release` branch only (first release: **1.0.0.3001**, tag `v1.0.0.3001`). Do not merge casual `develop` work into `release`.
 
 ### Metadata
 

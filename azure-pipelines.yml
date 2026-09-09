@@ -9,8 +9,8 @@ variables:
   testsFolder: './_tests'
   yarnCacheFolder: $(Pipeline.Workspace)/.yarn
   nugetCacheFolder: $(Pipeline.Workspace)/.nuget/packages
-  majorVersion: '0.4.19'
-  minorVersion: $[counter('minorVersion', 1)]
+  majorVersion: '1.0.0'
+  minorVersion: $[counter('minorVersion3001', 3001)]
   readarrVersion: '$(majorVersion).$(minorVersion)'
   buildName: '$(Build.SourceBranchName).$(readarrVersion)'
   sentryOrg: 'servarr'
@@ -26,6 +26,7 @@ trigger:
   branches:
     include:
     - develop
+    - release
     - master
   paths:
     exclude:
