@@ -11,7 +11,9 @@ The historical Servarr wiki remains at [wiki.servarr.com/readarr](https://wiki.s
 ## Development
 
 - Solution: `src/Readarr.sln`
-- Default branch: `develop`
+- Default branch: `develop` (day-to-day work)
+- `release` is sacrosanct: official release artifacts only. Do not land features there. Merge `develop` into `release` only at a major milestone.
+- Current release version: `1.0.0.3001` (git tag `v1.0.0.3001`)
 - Unit tests: `src/NzbDrone.Core.Test`
 - House style: `NzbDrone.*` namespaces, NUnit, FluentAssertions, Moq, Newtonsoft.Json, DryIoc, StyleCop
 - Coverage gate for new slices: Coverlet ≥ 80%
