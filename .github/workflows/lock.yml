@@ -9,16 +9,17 @@ permissions:
   issues: write
   pull-requests: write
 
+concurrency:
+  group: lock-threads
+
 jobs:
   lock:
     runs-on: ubuntu-latest
     steps:
-      - uses: dessant/lock-threads@v4
+      # v4 validates github-token length <= 100 and fails on current GITHUB_TOKEN.
+      # v6.0.2+ accepts the longer token and runs on Node 24.
+      - uses: dessant/lock-threads@v6
         with:
           issue-inactive-days: '90'
-          exclude-issue-created-before: ''
-          exclude-any-issue-labels: ''
-          add-issue-labels: ''
-          issue-comment: ''
           issue-lock-reason: 'resolved'
-          process-only: ''
+          process-only: 'issues, prs'
